@@ -15,9 +15,8 @@ public interface IRepository<T>
     // Identificador público (ex: em URLs)
     Task<T?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default);
 
+    // Adiciona uma nova entidade ao repositório.
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
-
-    void Remove(T entity);
 
     // Verificação por Id interno
     Task<bool> ExistsByIdAsync(int id, CancellationToken cancellationToken = default);

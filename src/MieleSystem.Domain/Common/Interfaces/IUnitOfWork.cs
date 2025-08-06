@@ -2,7 +2,7 @@ namespace MieleSystem.Domain.Common.Interfaces;
 
 /// <summary>
 /// Interface para gerenciamento de unidade de trabalho.
-/// Coordena repositórios e transações.
+/// Define métodos para controle de transações e persistência de alterações.
 /// </summary>
 public interface IUnitOfWork
 {
@@ -17,9 +17,4 @@ public interface IUnitOfWork
 
     // Verifica se há transação ativa
     bool HasActiveTransaction { get; }
-
-    // Exemplo de repositórios que o UnitOfWork coordena
-    // IClientRepository Clients { get; }
-    // IUserRepository Users { get; }
-    // Outros repositórios podem ser adicionados conforme necessário
 }
