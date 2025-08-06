@@ -6,7 +6,7 @@ namespace MieleSystem.Domain.Common.Base;
 public abstract class ValueObject
 {
     /// <summary>
-    /// Retorna os componentes que definem a igualdade entre objetos de valor.
+    /// Retorna os componentes que definem a igualdade entre Value Objects.
     /// </summary>
     protected abstract IEnumerable<object?> GetEqualityComponents();
 
@@ -20,9 +20,8 @@ public abstract class ValueObject
         return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
 
-    public override int GetHashCode()
-    {
-        return GetEqualityComponents()
+    public override int GetHashCode() =>
+        GetEqualityComponents()
             .Aggregate(
                 1,
                 (current, obj) =>
@@ -33,7 +32,6 @@ public abstract class ValueObject
                     }
                 }
             );
-    }
 
     public static bool operator ==(ValueObject? a, ValueObject? b) =>
         a is null && b is null || a is not null && a.Equals(b);

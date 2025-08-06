@@ -4,27 +4,15 @@ namespace MieleSystem.Domain.Common.Base;
 /// Classe base para todas as entidades do domínio.
 /// Define tanto o identificador interno (Id) quanto o identificador público (PublicId).
 /// </summary>
-public abstract class Entity
+public abstract class Entity(Guid publicId)
 {
     /// Identificador interno técnico da entidade. Gerado pelo banco de dados (auto-incremento).
     /// Não deve ser exposto em APIs.
     public int Id { get; protected set; }
 
     /// Identificador público da entidade. Seguro para exposição externa.
-    public Guid PublicId { get; protected set; }
-
-    /// Construtor para criação de nova entidade.
-    /// Gera automaticamente o PublicId.
-    protected Entity()
-    {
-        PublicId = Guid.NewGuid();
-    }
-
-    /// Construtor para reidratação via ORM (por exemplo, EF Core).
-    protected Entity(Guid publicId)
-    {
-        PublicId = publicId == Guid.Empty ? Guid.NewGuid() : publicId;
-    }
+    public Guid PublicId { get; protected set; } =
+        publicId == Guid.Empty ? Guid.NewGuid() : publicId;
 
     public override bool Equals(object? obj)
     {
