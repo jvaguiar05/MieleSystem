@@ -11,14 +11,14 @@ namespace MieleSystem.Domain.Identity.Repositories;
 public interface IRefreshTokenRepository : IRepository<RefreshToken>
 {
     // Busca um refresh token pelo valor do token.
-    Task<RefreshToken?> GetByTokenAsync(Token token, CancellationToken cancellationToken = default);
+    Task<RefreshToken?> GetByTokenAsync(Token token, CancellationToken ct = default);
 
     // Busca todos os tokens válidos de um usuário.
     Task<IReadOnlyList<RefreshToken>> GetValidTokensByUserIdAsync(
         Guid publicUserId,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     );
 
     // Remove todos os tokens expirados ou revogados (limpeza periódica, se necessário).
-    Task RemoveInvalidTokensAsync(CancellationToken cancellationToken = default);
+    Task RemoveInvalidTokensAsync(CancellationToken ct = default);
 }

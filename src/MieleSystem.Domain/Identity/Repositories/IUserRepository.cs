@@ -11,19 +11,17 @@ namespace MieleSystem.Domain.Identity.Repositories;
 public interface IUserRepository : IRepository<User>
 {
     // Busca um usuário pelo e-mail.
-    Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default);
+    Task<User?> GetByEmailAsync(Email email, CancellationToken ct = default);
 
     // Verifica se um e-mail já está registrado.
-    Task<bool> EmailExistsAsync(Email email, CancellationToken cancellationToken = default);
+    Task<bool> EmailExistsAsync(Email email, CancellationToken ct = default);
 
     // Obtém todos os usuários com status de registro pendente.
-    Task<IReadOnlyList<User>> GetPendingRegistrationsAsync(
-        CancellationToken cancellationToken = default
-    );
+    Task<IReadOnlyList<User>> GetPendingRegistrationsAsync(CancellationToken ct = default);
 
     // Obtém todos os usuários do tipo Viewer com data de expiração vencida.
     Task<IReadOnlyList<User>> GetExpiredViewerAccountsAsync(
         DateOnly referenceDate,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     );
 }

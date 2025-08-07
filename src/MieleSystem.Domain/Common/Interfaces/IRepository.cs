@@ -10,17 +10,17 @@ public interface IRepository<T>
     where T : Entity
 {
     // Identificador técnico interno (auto-incremento)
-    Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<T?> GetByIdAsync(int id, CancellationToken ct = default);
 
     // Identificador público (ex: em URLs)
-    Task<T?> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default);
+    Task<T?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default);
 
     // Adiciona uma nova entidade ao repositório.
-    Task AddAsync(T entity, CancellationToken cancellationToken = default);
+    Task AddAsync(T entity, CancellationToken ct = default);
 
     // Verificação por Id interno
-    Task<bool> ExistsByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByIdAsync(int id, CancellationToken ct = default);
 
     // Verificação por PublicId
-    Task<bool> ExistsByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByPublicIdAsync(Guid publicId, CancellationToken ct = default);
 }

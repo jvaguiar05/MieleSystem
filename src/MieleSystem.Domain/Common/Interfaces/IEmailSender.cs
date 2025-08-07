@@ -19,6 +19,6 @@ public interface IEmailSender
         string subject,
         string body,
         bool isHtml = true,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     );
 }
