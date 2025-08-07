@@ -28,14 +28,9 @@ MieleSystem.Domain/
     │   │   ├── PasswordChangedEvent.cs
     │   │   └── UserRoleChangedEvent.cs
     │   │
-    │   ├── Auth/                     # Eventos relacionados à autenticação
-    │   │   ├── UserLoggedInEvent.cs
-    │   │   ├── UserLoggedOutEvent.cs
-    │   │   └── OtpCodeRequestedEvent.cs
-    │   │
     │   └── Admin/                    # Eventos relacionados à administração do sistema
-    │       ├── ViewerUserInvitedEvent.cs
     │       ├── UserRegistrationApprovedEvent.cs
+    │       ├── UserRegistrationPendingEvent.cs
     │       └── UserRegistrationRejectedEvent.cs
     │
     ├── Repositories/
@@ -106,6 +101,7 @@ Os eventos são agrupados por significado semântico:
 | `ViewerUserInvitedEvent`        | Envia convite para criar conta Viewer (leitura). |
 | `UserRegistrationApprovedEvent` | Conta aprovada pelo Admin.                       |
 | `UserRegistrationRejectedEvent` | Conta rejeitada pelo Admin.                      |
+| `UserRegistrationPendingEvent`  | Conta a espera de resposta do Admin.              |
 
 ---
 
