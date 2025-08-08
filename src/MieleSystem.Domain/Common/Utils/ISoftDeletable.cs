@@ -6,8 +6,8 @@ namespace MieleSystem.Domain.Common.Utils;
 /// </summary>
 public interface ISoftDeletable
 {
-    bool IsDeleted { get; }
-    DateTime? DeletedAt { get; }
+    bool IsDeleted { get; set; }
+    DateTime? DeletedAt { get; set; }
 
     void Delete();
     void Restore();
