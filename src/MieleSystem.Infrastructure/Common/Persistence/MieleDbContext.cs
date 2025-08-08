@@ -66,8 +66,7 @@ internal sealed class MieleDbContext : DbContext
             if (entry.Entity is ISoftDeletable soft)
             {
                 entry.State = EntityState.Modified;
-                soft.IsDeleted = true;
-                soft.DeletedAt = DateTime.UtcNow;
+                soft.Delete(); // chama a lógica encapsulada da entidade
             }
         }
     }
