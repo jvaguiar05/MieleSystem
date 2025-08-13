@@ -32,4 +32,14 @@ public class PageRequestDto
     /// Campo de ordenação (ex: "name", "createdAt desc").
     /// </summary>
     public string? OrderBy { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Quantidade de itens a pular (offset).
+    /// </summary>
+    public int Skip => (Page - 1) * PageSize;
+
+    /// <summary>
+    /// Quantidade de itens a retornar (limit).
+    /// </summary>
+    public int Take => PageSize;
 }

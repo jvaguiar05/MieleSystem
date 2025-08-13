@@ -6,16 +6,28 @@ namespace MieleSystem.Application.Common.DTOs;
 /// <typeparam name="T">Tipo de item contido na página.</typeparam>
 public sealed class PageResultDto<T>
 {
+    /// <summary>
+    /// Itens retornados na página atual.
+    /// </summary>
     public IEnumerable<T> Items { get; init; } = Enumerable.Empty<T>();
 
+    /// <summary>
+    /// Página atual (1-based).
+    /// </summary>
     public int Page { get; init; } = 1;
 
+    /// <summary>
+    /// Tamanho da página (quantidade de itens por página).
+    /// </summary>
     public int PageSize { get; init; }
 
+    /// <summary>
+    /// Quantidade total de itens da fonte de dados.
+    /// </summary>
     public int TotalCount { get; init; }
 
     /// <summary>
-    /// Total de páginas disponíveis com base no total de itens e page size.
+    /// Quantidade total de páginas disponíveis.
     /// </summary>
     public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling((double)TotalCount / PageSize);
 
@@ -30,7 +42,8 @@ public sealed class PageResultDto<T>
     public bool HasPreviousPage => Page > 1;
 
     /// <summary>
-    /// Cria um PageResultDto com todos os campos calculados automaticamente.
+    /// Cria um PageResultDto com validação básica.
+    /// Corrige valores inválidos de página, tamanho ou total.
     /// </summary>
     public static PageResultDto<T> Create(
         IEnumerable<T> items,
@@ -43,7 +56,7 @@ public sealed class PageResultDto<T>
         {
             Items = items ?? Enumerable.Empty<T>(),
             Page = page < 1 ? 1 : page,
-            PageSize = pageSize <= 0 ? 1 : pageSize,
+            PageSize = pageSize <= 0 ? 10 : pageSize,
             TotalCount = totalCount < 0 ? 0 : totalCount,
         };
     }
