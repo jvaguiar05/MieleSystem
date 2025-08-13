@@ -52,8 +52,6 @@ public sealed class User : AggregateRoot, ISoftDeletable
         Email = email ?? throw new DomainException("E-mail inválido.");
         PasswordHash = NewPasswordHashOrThrow(passwordHash);
         Role = role ?? throw new DomainException("Role inválida.");
-
-        AddDomainEvent(new UserRegisteredEvent(PublicId, Role, Email));
     }
 
     public static User Register(
@@ -74,6 +72,13 @@ public sealed class User : AggregateRoot, ISoftDeletable
 
     private static PasswordHash NewPasswordHashOrThrow(PasswordHash hash) =>
         hash ?? throw new DomainException("Hash de senha inválido.");
+
+    public void MarkAsRegistered()
+    {
+        EnsureNotDeleted();
+
+        AddDomainEvent(new UserRegisteredEvent(Id, PublicId, Role, Email));
+    }
 
     public void ChangeName(string newName)
     {
