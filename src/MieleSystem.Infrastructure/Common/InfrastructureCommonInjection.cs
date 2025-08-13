@@ -37,7 +37,6 @@ public static class InfrastructureCommonInjection
 
         // Serviços transversais
         services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
-        services.AddScoped<IEmailSender, EmailSender>();
 
         return services;
     }

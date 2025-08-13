@@ -1,5 +1,5 @@
 using MieleSystem.Domain.Common.Base;
-using MieleSystem.Domain.Common.Utils;
+using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Domain.Identity.Enums;
 using MieleSystem.Domain.Identity.Events.Admin;
 using MieleSystem.Domain.Identity.Events.User;

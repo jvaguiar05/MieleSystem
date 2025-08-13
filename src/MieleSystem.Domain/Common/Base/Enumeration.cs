@@ -1,3 +1,5 @@
+using MieleSystem.Domain.Common.Exceptions;
+
 namespace MieleSystem.Domain.Common.Base;
 
 /// <summary>
@@ -21,7 +23,21 @@ public abstract class Enumeration(int value, string name) : IComparable
 
     public override int GetHashCode() => Value.GetHashCode();
 
-    public int CompareTo(object? other) => other is Enumeration e ? Value.CompareTo(e.Value) : -1;
+    /// <summary>
+    /// Compara esta instância com outra do mesmo tipo.
+    /// </summary>
+    /// <exception cref="BusinessRuleValidationException">
+    /// Lançada quando o objeto comparado não é uma Enumeration do mesmo tipo.
+    /// </exception>
+    public int CompareTo(object? other)
+    {
+        if (other is not Enumeration e)
+            throw new BusinessRuleValidationException(
+                $"O objeto comparado não é uma instância válida de {GetType().Name}."
+            );
+
+        return Value.CompareTo(e.Value);
+    }
 
     public static IEnumerable<T> GetAll<T>()
         where T : Enumeration

@@ -5,7 +5,7 @@ namespace MieleSystem.Application.Common.DTOs;
 /// </summary>
 public class PageRequestDto
 {
-    private const int MaxPageSize = 100;
+    public const int MaxPageSize = 100;
 
     private int _page = 1;
     private int _pageSize = 20;
@@ -31,5 +31,5 @@ public class PageRequestDto
     /// <summary>
     /// Campo de ordenação (ex: "name", "createdAt desc").
     /// </summary>
-    public string? OrderBy { get; init; }
+    public string? OrderBy { get; init; } = string.Empty;
 }

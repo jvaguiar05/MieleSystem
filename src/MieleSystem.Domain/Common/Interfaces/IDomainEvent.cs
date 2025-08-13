@@ -10,6 +10,6 @@ public interface IDomainEvent
     /// Identificador único do evento.
     Guid EventId { get; }
 
-    /// Momento em que o evento foi gerado.
+    /// Momento em que o evento foi gerado (UTC).
     DateTime OccurredOn { get; }
 }

@@ -2,19 +2,35 @@ namespace MieleSystem.Domain.Common.Interfaces;
 
 /// <summary>
 /// Interface para gerenciamento de unidade de trabalho.
-/// Define métodos para controle de transações e persistência de alterações.
+/// Responsável por controlar persistência de alterações e, opcionalmente, transações.
 /// </summary>
 public interface IUnitOfWork
 {
-    // Inicia uma transação manualmente (opcional, se não usar ambient transaction)
+    /// <summary>
+    /// Persiste todas as alterações pendentes no contexto atual.
+    /// Também aciona a publicação de Domain Events antes do commit.
+    /// </summary>
+    /// <returns>Número de registros afetados.</returns>
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Inicia uma transação manualmente.
+    /// Use apenas quando precisar agrupar múltiplas operações em uma única transação explícita.
+    /// </summary>
     Task BeginTransactionAsync(CancellationToken ct = default);
 
-    // Efetiva todas as alterações pendentes
-    Task CommitAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Confirma a transação manual atualmente ativa.
+    /// </summary>
+    Task CommitTransactionAsync(CancellationToken ct = default);
 
-    // Desfaz alterações (quando transação aberta)
-    Task RollbackAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Reverte a transação manual atualmente ativa.
+    /// </summary>
+    Task RollbackTransactionAsync(CancellationToken ct = default);
 
-    // Verifica se há transação ativa
+    /// <summary>
+    /// Indica se há transação ativa.
+    /// </summary>
     bool HasActiveTransaction { get; }
 }

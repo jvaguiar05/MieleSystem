@@ -4,19 +4,19 @@ using MieleSystem.Domain.Common.Interfaces;
 
 namespace MieleSystem.Infrastructure.Common.Persistence;
 
+/// <summary>
+/// Implementação base do repositório de escrita.
+/// Opera sempre respeitando filtros globais (ex.: soft delete).
+/// </summary>
 internal abstract class RepositoryBase<T>(MieleDbContext db) : IRepository<T>
     where T : Entity
 {
     protected readonly MieleDbContext _db = db;
     protected readonly DbSet<T> _set = db.Set<T>();
 
-    // =========================
-    // Consultas (respeitam filtros globais, ex.: soft delete)
-    // =========================
-
     public virtual async Task<T?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        // NÃO usar FindAsync: ele ignora filtros globais
+        // NÃO usar FindAsync: ele ignora filtros globais (soft delete, etc.)
         return await _set.FirstOrDefaultAsync(e => e.Id == id, ct);
     }
 
@@ -41,20 +41,23 @@ internal abstract class RepositoryBase<T>(MieleDbContext db) : IRepository<T>
     public virtual async Task AddAsync(T entity, CancellationToken ct = default)
     {
         await _set.AddAsync(entity, ct);
-        // Persistência efetiva é responsabilidade do UnitOfWork.CommitAsync()
     }
 
-    // =========================
-    // Helpers para repositórios específicos
-    // =========================
+    public virtual void Update(T entity)
+    {
+        _set.Update(entity);
+    }
 
-    /// <summary>
-    /// Query padrão (com tracking). Útil para construir consultas com Includes nos repositórios concretos.
-    /// </summary>
-    protected IQueryable<T> Query() => _set;
-
-    /// <summary>
-    /// Query sem tracking (ideal p/ leitura pura).
-    /// </summary>
-    protected IQueryable<T> QueryNoTracking() => _set.AsNoTracking();
+    public virtual void Delete(T entity)
+    {
+        if (entity is ISoftDeletable softDeletable)
+        {
+            softDeletable.Delete();
+            _set.Update(entity);
+        }
+        else
+        {
+            _set.Remove(entity);
+        }
+    }
 }

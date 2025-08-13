@@ -1,4 +1,4 @@
-namespace MieleSystem.Domain.Common.Utils;
+namespace MieleSystem.Domain.Common.Interfaces;
 
 /// <summary>
 /// Marca uma entidade como deletável logicamente.

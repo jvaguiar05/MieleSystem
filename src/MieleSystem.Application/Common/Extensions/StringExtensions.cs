@@ -17,7 +17,7 @@ public static class StringExtensions
     {
         return string.Join(
             " ",
-            value.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
+            value.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
         );
     }
 

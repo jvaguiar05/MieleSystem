@@ -34,9 +34,6 @@ public static class ApplicationCommonInjection
         // MediatR (descobre todos os handlers automaticamente)
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
 
-        // Serviços auxiliares
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-
         return services;
     }
 }

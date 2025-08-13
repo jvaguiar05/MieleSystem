@@ -2,7 +2,6 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MieleSystem.Domain.Common.Interfaces;
-using MieleSystem.Domain.Common.Utils;
 
 // using MieleSystem.Domain.Identity.Entities;   // descomente quando tiver as entidades
 // using MieleSystem.Domain.Clients.Entities;    // idem
