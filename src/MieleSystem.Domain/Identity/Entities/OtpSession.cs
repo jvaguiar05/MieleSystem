@@ -12,7 +12,7 @@ public class OtpSession : Entity
     public OtpCode Otp { get; private set; } = null!;
 
     /// <summary>Momento (UTC) em que a sessão foi criada.</summary>
-    public DateTime CreatedAtUtc { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
 
     /// <summary>Indica se o OTP desta sessão já foi utilizado.</summary>
     public bool IsUsed { get; private set; }

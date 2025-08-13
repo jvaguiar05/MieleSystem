@@ -14,6 +14,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     public Email Email { get; private set; } = null!;
     public PasswordHash PasswordHash { get; private set; } = null!;
     public UserRole Role { get; private set; } = null!;
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
 
     /// Situação do registro do usuário.
     public UserRegistrationSituation RegistrationSituation { get; private set; } =

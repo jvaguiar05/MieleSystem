@@ -14,6 +14,7 @@ public sealed class RefreshToken : Entity
     public DateTime ExpiresAtUtc { get; private set; }
     public bool IsRevoked { get; private set; }
     public DateTime? RevokedAtUtc { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
 
     // FK + navegação (privadas, mantêm o encapsulamento do agregado)
     private int UserId { get; set; }
