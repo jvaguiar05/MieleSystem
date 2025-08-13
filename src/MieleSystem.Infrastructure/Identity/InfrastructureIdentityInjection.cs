@@ -24,13 +24,17 @@ public static class InfrastructureIdentityInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserReadStore, UserReadStore>();
 
-        // Serviços de segurança
+        // Serviços de Hashing
         services.Configure<BCryptOptions>(configuration.GetSection("Security:BCrypt"));
         services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         // Serviços de geração de tokens
         services.Configure<JwtOptions>(configuration.GetSection("Security:Jwt"));
         services.AddScoped<ITokenService, TokenService>();
+
+        // Serviços de geração de OTP
+        services.Configure<OtpOptions>(configuration.GetSection("Security:Otp"));
+        services.AddScoped<IOtpService, OtpService>();
 
         return services;
     }
