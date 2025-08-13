@@ -8,7 +8,7 @@ namespace MieleSystem.Infrastructure.Common.Persistence;
 /// Implementação base do repositório de escrita.
 /// Opera sempre respeitando filtros globais (ex.: soft delete).
 /// </summary>
-internal abstract class RepositoryBase<T>(MieleDbContext db) : IRepository<T>
+public abstract class RepositoryBase<T>(MieleDbContext db) : IRepository<T>
     where T : Entity
 {
     protected readonly MieleDbContext _db = db;

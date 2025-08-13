@@ -2,10 +2,11 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MieleSystem.Domain.Common.Interfaces;
+// Contextos
+using MieleSystem.Domain.Identity.Entities;
 
-// using MieleSystem.Domain.Identity.Entities;   // descomente quando tiver as entidades
-// using MieleSystem.Domain.Clients.Entities;    // idem
-// using MieleSystem.Domain.Perdcomps.Entities;  // idem
+// using MieleSystem.Domain.Clients.Entities;
+// using MieleSystem.Domain.Perdcomps.Entities;
 
 namespace MieleSystem.Infrastructure.Common.Persistence;
 
@@ -13,19 +14,17 @@ namespace MieleSystem.Infrastructure.Common.Persistence;
 /// DbContext principal do MieleSystem (monólito modular).
 /// Mapeia entidades de todos os Bounded Contexts, mantendo os mapeamentos organizados por contexto.
 /// </summary>
-internal sealed class MieleDbContext : DbContext
+public sealed class MieleDbContext(DbContextOptions<MieleDbContext> options) : DbContext(options)
 {
-    public MieleDbContext(DbContextOptions<MieleDbContext> options)
-        : base(options) { }
-
     // =======================
     // DbSets por contexto
     // =======================
 
     // Identity
-    // public DbSet<User> Users => Set<User>();
-    // public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    // public DbSet<OtpSession> OtpSessions => Set<OtpSession>();
+
+    public DbSet<User> Users => Set<User>();
+    public DbSet<OtpSession> OtpSessions => Set<OtpSession>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // Clients
     // public DbSet<Client> Clients => Set<Client>();
@@ -39,25 +38,23 @@ internal sealed class MieleDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Aplica todas as configurações IEntityTypeConfiguration<> do assembly da Infrastructure
-        // (crie as classes de mapeamento por contexto em Infrastructure/[Contexto]/Persistence/Configurations)
+        // Aplica todas as configurações IEntityTypeConfiguration<> disponíveis neste assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MieleDbContext).Assembly);
 
-        // Aplica filtro global para Soft Delete quando a entidade implementar ISoftDeletable
+        // Aplica filtros globais para soft delete
         ApplySoftDeleteQueryFilters(modelBuilder);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Converte deleções em Soft Delete quando a entidade implementa ISoftDeletable
         HandleSoftDeleteChangeTracker(ChangeTracker);
-
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    // ==============
+    // =======================
     // Helpers
-    // ==============
+    // =======================
+
     private static void HandleSoftDeleteChangeTracker(ChangeTracker changeTracker)
     {
         foreach (var entry in changeTracker.Entries().Where(e => e.State == EntityState.Deleted))
@@ -65,7 +62,7 @@ internal sealed class MieleDbContext : DbContext
             if (entry.Entity is ISoftDeletable soft)
             {
                 entry.State = EntityState.Modified;
-                soft.Delete(); // chama a lógica encapsulada da entidade
+                soft.Delete(); // lógica encapsulada
             }
         }
     }
@@ -76,7 +73,6 @@ internal sealed class MieleDbContext : DbContext
         {
             if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
             {
-                // Cria expressão: (e) => !e.IsDeleted
                 var parameter = Expression.Parameter(entityType.ClrType, "e");
                 var prop = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
                 var notDeleted = Expression.Equal(prop, Expression.Constant(false));
