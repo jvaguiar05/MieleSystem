@@ -5,6 +5,7 @@ using MieleSystem.Application.Common.Interfaces;
 using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Infrastructure.Common.Persistence;
 using MieleSystem.Infrastructure.Common.Services;
+using MieleSystem.Infrastructure.Identity.Injection;
 
 namespace MieleSystem.Infrastructure.Common;
 
@@ -37,6 +38,8 @@ public static class InfrastructureCommonInjection
 
         // Serviços transversais
         services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
+
+        services.AddIdentityInfrastructure(configuration);
 
         return services;
     }

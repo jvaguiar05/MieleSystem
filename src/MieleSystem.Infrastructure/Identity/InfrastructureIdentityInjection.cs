@@ -1,0 +1,33 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MieleSystem.Application.Identity.Stores;
+using MieleSystem.Domain.Identity.Repositories;
+using MieleSystem.Domain.Identity.Services;
+using MieleSystem.Infrastructure.Identity.Options;
+using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
+using MieleSystem.Infrastructure.Identity.Persistence.Stores;
+using MieleSystem.Infrastructure.Identity.Services;
+
+namespace MieleSystem.Infrastructure.Identity.Injection;
+
+/// <summary>
+/// Extensões para registrar os serviços e dependências da camada Identity na injeção de dependência.
+/// </summary>
+public static class InfrastructureIdentityInjection
+{
+    public static IServiceCollection AddIdentityInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        // Repositórios
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserReadStore, UserReadStore>();
+
+        // Serviços de segurança
+        services.Configure<BCryptOptions>(configuration.GetSection("Security:BCrypt"));
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+        return services;
+    }
+}
