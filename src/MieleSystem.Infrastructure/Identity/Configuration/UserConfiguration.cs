@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MieleSystem.Domain.Identity.Entities;
 using MieleSystem.Domain.Identity.Enums;
 using MieleSystem.Domain.Identity.ValueObjects;
+using Mail = MieleSystem.Domain.Identity.ValueObjects.Email;
 
 namespace MieleSystem.Infrastructure.Identity.Configuration;
 
@@ -27,7 +28,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder
             .Property(x => x.Email)
-            .HasConversion(email => email.Value, value => new Email(value))
+            .HasConversion(email => email.Value, value => new Mail(value))
             .HasMaxLength(255)
             .IsRequired();
 

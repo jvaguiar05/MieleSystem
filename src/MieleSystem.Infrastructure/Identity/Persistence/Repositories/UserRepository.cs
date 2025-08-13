@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MieleSystem.Domain.Identity.Entities;
 using MieleSystem.Domain.Identity.Repositories;
-using MieleSystem.Domain.Identity.ValueObjects;
 using MieleSystem.Infrastructure.Common.Persistence;
+using Mail = MieleSystem.Domain.Identity.ValueObjects.Email;
 
 namespace MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 
@@ -19,7 +19,7 @@ public sealed class UserRepository(MieleDbContext db) : RepositoryBase<User>(db)
     /// <param name="email"></param>
     /// <param name="ct"></param>
     /// <returns>Um usuário, se encontrado; caso contrário, null.</returns>
-    public async Task<User?> GetByEmailAsync(Email email, CancellationToken ct = default)
+    public async Task<User?> GetByEmailAsync(Mail email, CancellationToken ct = default)
     {
         return await _set.FirstOrDefaultAsync(x => x.Email == email, ct);
     }
@@ -30,7 +30,7 @@ public sealed class UserRepository(MieleDbContext db) : RepositoryBase<User>(db)
     /// <param name="email"></param>
     /// <param name="ct"></param>
     /// <returns>Verdadeiro se o usuário existir, falso caso contrário.</returns>
-    public async Task<bool> ExistsByEmailAsync(Email email, CancellationToken ct = default)
+    public async Task<bool> ExistsByEmailAsync(Mail email, CancellationToken ct = default)
     {
         return await _set.AnyAsync(x => x.Email == email, ct);
     }
