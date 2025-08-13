@@ -28,6 +28,10 @@ public static class InfrastructureIdentityInjection
         services.Configure<BCryptOptions>(configuration.GetSection("Security:BCrypt"));
         services.AddScoped<IPasswordHasher, PasswordHasher>();
 
+        // Serviços de geração de tokens
+        services.Configure<JwtOptions>(configuration.GetSection("Security:Jwt"));
+        services.AddScoped<ITokenService, TokenService>();
+
         return services;
     }
 }
