@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MieleSystem.Application.Identity.Services;
 using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
 using MieleSystem.Domain.Identity.Services;
+using MieleSystem.Infrastructure.Identity.Email;
 using MieleSystem.Infrastructure.Identity.Options;
 using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 using MieleSystem.Infrastructure.Identity.Persistence.Stores;
@@ -35,6 +37,10 @@ public static class InfrastructureIdentityInjection
         // Serviços de geração de OTP
         services.Configure<OtpOptions>(configuration.GetSection("Security:Otp"));
         services.AddScoped<IOtpService, OtpService>();
+
+        // Serviços de envio de e-mail
+        services.Configure<EmailSenderOptions>(configuration.GetSection("Email"));
+        services.AddScoped<IAccountEmailService, AccountEmailService>();
 
         return services;
     }

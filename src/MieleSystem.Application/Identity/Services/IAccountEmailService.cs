@@ -1,6 +1,6 @@
 using MieleSystem.Domain.Identity.ValueObjects;
 
-namespace MieleSystem.Application.Identity.Services.Interfaces;
+namespace MieleSystem.Application.Identity.Services;
 
 /// <summary>
 /// Serviço de envio de e-mails relacionado a operações de conta no contexto de Identity.
