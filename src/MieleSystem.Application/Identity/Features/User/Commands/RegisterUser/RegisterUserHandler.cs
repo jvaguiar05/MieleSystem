@@ -9,14 +9,11 @@ using MieleSystem.Domain.Identity.ValueObjects;
 namespace MieleSystem.Application.Identity.Features.User.Commands.RegisterUser;
 
 /// <summary>
-/// Handler responsável por orquestrar o registro de um novo usuário.
-/// Regras:
-/// - Verificar unicidade de e-mail
-/// - Hash da senha
-/// - Definir Role (padrão: Viewer)
-/// - Persistir agregado e confirmar UnitOfWork
-/// - Retornar o identificador público do usuário criado
+/// Handler responsável por registrar um novo usuário no sistema.
+/// Valida e-mail, aplica hash na senha, define o papel (Role),
+/// persiste o agregado e dispara o evento de registro.
 /// </summary>
+
 public sealed class RegisterUserHandler(
     IUserRepository users,
     IPasswordHasher passwordHasher,
@@ -29,22 +26,22 @@ public sealed class RegisterUserHandler(
 
     public async Task<Result<Guid>> Handle(RegisterUserCommand request, CancellationToken ct)
     {
-        // 1) Normaliza e valida VOs básicos
+        // Normaliza e valida VOs básicos
         var emailVo = new Email(request.Email);
 
-        // 2) Garantir unicidade de e-mail
+        // Garante unicidade de e-mail
         var exists = await _users.ExistsByEmailAsync(emailVo, ct);
         if (exists)
             return Result<Guid>.Failure("O e-mail informado já está em uso.");
 
-        // 3) Gerar hash seguro da senha
+        // Gera hash seguro da senha
         var hashStr = _passwordHasher.Hash(request.Password);
         var passwordVo = new PasswordHash(hashStr);
 
-        // 4) Definir Role (padrão Viewer)
+        // Define Role (padrão Viewer)
         var role = ResolveRoleOrDefault(request.Role);
 
-        // 5) Criar agregado e adicionar ao repositório
+        // Cria agregado e adiciona ao repositório
         var user = Domain.Identity.Entities.User.Register(
             name: request.Name,
             email: emailVo,
@@ -54,10 +51,16 @@ public sealed class RegisterUserHandler(
 
         await _users.AddAsync(user, ct);
 
-        // 6) Confirmar transação
+        // Persiste para garantir que o Id seja gerado
         await _uow.SaveChangesAsync(ct);
 
-        // 7) Retornar apenas o PublicId
+        // Lança UserRegisteredEvent com int UserId real
+        user.MarkAsRegistered();
+
+        // Dispara eventos via UoW (publica o UserRegisteredEvent)
+        await _uow.SaveChangesAsync(ct);
+
+        // Retorna apenas o PublicId
         return Result<Guid>.Success(user.PublicId);
     }
 

@@ -7,8 +7,10 @@ namespace MieleSystem.Domain.Identity.Events.User;
 /// <summary>
 /// Evento disparado quando um novo usuário é registrado no sistema.
 /// </summary>
-public sealed class UserRegisteredEvent(Guid userPublicId, UserRole role, Email email) : DomainEvent
+public sealed class UserRegisteredEvent(int userId, Guid userPublicId, UserRole role, Email email)
+    : DomainEvent
 {
+    public int UserId { get; } = userId;
     public Guid UserPublicId { get; } = userPublicId;
     public UserRole Role { get; } = role;
     public Email Email { get; } = email;

@@ -5,6 +5,7 @@ using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
 using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Email;
+using MieleSystem.Infrastructure.Identity.Events.User;
 using MieleSystem.Infrastructure.Identity.Options;
 using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 using MieleSystem.Infrastructure.Identity.Persistence.Stores;
@@ -24,6 +25,9 @@ public static class InfrastructureIdentityInjection
     {
         // Repositórios
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
+
+        // Read Stores
         services.AddScoped<IUserReadStore, UserReadStore>();
 
         // Serviços de Hashing
@@ -41,6 +45,11 @@ public static class InfrastructureIdentityInjection
         // Serviços de envio de e-mail
         services.Configure<EmailSenderOptions>(configuration.GetSection("Email"));
         services.AddScoped<IAccountEmailService, AccountEmailService>();
+
+        // Handlers de eventos
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(UserRegisteredEventHandler).Assembly)
+        );
 
         return services;
     }
