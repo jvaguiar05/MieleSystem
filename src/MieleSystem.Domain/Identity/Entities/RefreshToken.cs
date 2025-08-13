@@ -1,60 +1,86 @@
 using MieleSystem.Domain.Common.Base;
+using MieleSystem.Domain.Common.Exceptions;
 using MieleSystem.Domain.Identity.ValueObjects;
 
 namespace MieleSystem.Domain.Identity.Entities;
 
 /// <summary>
-/// Representa um token de atualização (refresh token) associado a um usuário.
-/// Usado para manter sessões autenticadas com renovação de acesso.
+/// Token de atualização pertencente ao agregado <see cref="User"/>.
+/// Ciclo de vida controlado exclusivamente pelo Aggregate Root.
 /// </summary>
-public class RefreshToken : Entity
+public sealed class RefreshToken : Entity
 {
     public Token Token { get; private set; } = null!;
+    public DateTime ExpiresAtUtc { get; private set; }
+    public bool IsRevoked { get; private set; }
+    public DateTime? RevokedAtUtc { get; private set; }
 
-    public DateTime ExpiresAt { get; private set; }
-
-    public bool IsRevoked { get; private set; } = false;
-
-    public DateTime? RevokedAt { get; private set; }
-
-    // FK oculta (privada)
-    // Usado para mapear o relacionamento com o usuário no ORM (EF Core)
+    // FK + navegação (privadas, mantêm o encapsulamento do agregado)
     private int UserId { get; set; }
-
-    // Navegação (privada, se preferir manter agregação isolada)
     private User User { get; set; } = null!;
 
-    /// Construtor para uso do ORM (EF Core)
+    // EF Core
     private RefreshToken()
         : base(Guid.Empty) { }
 
-    /// Cria um novo refresh token com expiração e PublicId gerado automaticamente.
-    public RefreshToken(Token token, DateTime expiresAt)
-        : base(Guid.Empty)
+    /// <summary>
+    /// Construtor restrito para o agregado. Garante vínculo imediato ao <see cref="User"/>.
+    /// </summary>
+    /// <param name="owner">Usuário dono do token (Aggregate Root).</param>
+    /// <param name="token">Valor opaco do refresh token.</param>
+    /// <param name="expiresAtUtc">Expiração em UTC (deve ser futura).</param>
+    /// <param name="publicId">Opcional para reidratação/teste. Se vazio, é gerado.</param>
+    internal RefreshToken(User owner, Token token, DateTime expiresAtUtc, Guid? publicId = null)
+        : base(publicId ?? Guid.Empty)
     {
-        Token = token;
-        ExpiresAt = expiresAt;
-    }
+        if (owner is null)
+            throw new DomainException("Usuário do refresh token é obrigatório.");
+        if (token is null)
+            throw new DomainException("Token inválido.");
+        if (expiresAtUtc <= DateTime.UtcNow)
+            throw new DomainException("Expiração do refresh token deve ser futura.");
 
-    /// Cria um refresh token com PublicId explícito (para testes ou reidratação).
-    public RefreshToken(Guid publicId, Token token, DateTime expiresAt)
-        : base(publicId)
-    {
+        User = owner;
+        UserId = owner.Id;
+
         Token = token;
-        ExpiresAt = expiresAt;
+        ExpiresAtUtc = expiresAtUtc;
         IsRevoked = false;
+        RevokedAtUtc = null;
     }
 
+    /// <summary>Indica se o token está expirado (UTC).</summary>
+    public bool IsExpired() => DateTime.UtcNow >= ExpiresAtUtc;
+
+    /// <summary>Ativo quando não revogado e não expirado.</summary>
+    public bool IsActive() => !IsRevoked && !IsExpired();
+
+    /// <summary>Revoga o token (idempotente).</summary>
     public void Revoke()
     {
         if (IsRevoked)
             return;
 
         IsRevoked = true;
-        RevokedAt = DateTime.UtcNow;
+        RevokedAtUtc = DateTime.UtcNow;
     }
 
-    public bool IsExpired() => DateTime.UtcNow >= ExpiresAt;
-
+    /// <summary>Inválido quando expirado ou revogado.</summary>
     public bool IsInvalid() => IsRevoked || IsExpired();
+
+    /// <summary>
+    /// (Opcional) Extensão controlada do tempo de expiração — útil para rotinas de “rotate/extend”.
+    /// Mantém a regra de que a nova data deve ser futura e maior que a atual.
+    /// </summary>
+    public void ExtendExpiration(DateTime newExpiresAtUtc)
+    {
+        if (IsRevoked)
+            throw new DomainException("Não é possível estender um token revogado.");
+        if (newExpiresAtUtc <= DateTime.UtcNow)
+            throw new DomainException("Nova expiração deve ser futura.");
+        if (newExpiresAtUtc <= ExpiresAtUtc)
+            throw new DomainException("Nova expiração deve ser maior que a atual.");
+
+        ExpiresAtUtc = newExpiresAtUtc;
+    }
 }
