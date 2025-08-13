@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore.Storage;
+using MieleSystem.Application.Common.Events;
 using MieleSystem.Domain.Common.Base;
 using MieleSystem.Domain.Common.Interfaces;
 
@@ -25,11 +26,10 @@ internal sealed class UnitOfWork(MieleDbContext dbContext, IMediator mediator)
     /// <inheritdoc />
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
-        // 1. Publica eventos de domínio antes do commit
+        var result = await _dbContext.SaveChangesAsync(ct);
         await DispatchDomainEventsAsync(ct);
 
-        // 2. Persiste no banco
-        return await _dbContext.SaveChangesAsync(ct);
+        return result;
     }
 
     /// <inheritdoc />
@@ -83,11 +83,22 @@ internal sealed class UnitOfWork(MieleDbContext dbContext, IMediator mediator)
 
         var events = entitiesWithEvents.SelectMany(e => e.DomainEvents).ToList();
 
-        // Limpa eventos das entidades para evitar publicação duplicada
+        // Limpa eventos para evitar reprocessamento
         entitiesWithEvents.ForEach(e => e.ClearDomainEvents());
 
         foreach (var domainEvent in events)
-            await _mediator.Publish(domainEvent, ct);
+        {
+            // Cria o tipo genérico EventNotification<TEvent>
+            var notificationType = typeof(EventNotification<>).MakeGenericType(
+                domainEvent.GetType()
+            );
+
+            // Cria instância do notification com o evento como argumento
+            var notificationInstance = Activator.CreateInstance(notificationType, domainEvent)!;
+
+            // Publica via MediatR
+            await _mediator.Publish((INotification)notificationInstance, ct);
+        }
     }
 
     public void Dispose()
