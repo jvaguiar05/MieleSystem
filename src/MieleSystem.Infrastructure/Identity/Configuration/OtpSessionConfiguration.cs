@@ -16,6 +16,8 @@ public sealed class OtpSessionConfiguration : IEntityTypeConfiguration<OtpSessio
 
         builder.Property(x => x.IsUsed).IsRequired();
 
+        builder.Property(x => x.Purpose).HasConversion<int>().IsRequired();
+
         builder
             .Property(x => x.CreatedAtUtc)
             .HasColumnType("timestamp without time zone")

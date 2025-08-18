@@ -1,4 +1,5 @@
 using MieleSystem.Domain.Common.Base;
+using MieleSystem.Domain.Identity.Enums;
 using MieleSystem.Domain.Identity.ValueObjects;
 
 namespace MieleSystem.Domain.Identity.Entities;
@@ -17,6 +18,10 @@ public class OtpSession : Entity
     /// <summary>Indica se o OTP desta sessão já foi utilizado.</summary>
     public bool IsUsed { get; private set; }
 
+    /// <summary>Indica o propósito da sessão OTP.</summary>
+    public OtpPurpose Purpose { get; private set; }
+
+    /// <summary>Momento (UTC) em que a sessão foi utilizada.</summary>
     public DateTime? UsedAtUtc { get; private set; }
 
     // FK + navegação (backing para EF; permanece encapsulado no agregado)
@@ -28,7 +33,7 @@ public class OtpSession : Entity
         : base(Guid.Empty) { }
 
     // Ctor restrito ao domínio (internal) — criação deve acontecer via User.AddOtpSession
-    internal OtpSession(User user, OtpCode otp)
+    internal OtpSession(User user, OtpCode otp, OtpPurpose purpose)
         : base(Guid.Empty)
     {
         ArgumentNullException.ThrowIfNull(user);
@@ -38,6 +43,7 @@ public class OtpSession : Entity
         UserId = user.Id;
 
         Otp = otp;
+        Purpose = purpose;
         CreatedAtUtc = DateTime.UtcNow;
         IsUsed = false;
     }
@@ -87,4 +93,22 @@ public class OtpSession : Entity
         MarkAsUsed();
         return true;
     }
+
+    /// <summary>
+    /// Verifica se o propósito da sessão OTP é para login.
+    /// </summary>
+    /// <returns>Booleano indicando se o propósito é para login.</returns>
+    public bool IsForLogin() => Purpose == OtpPurpose.Login;
+
+    /// <summary>
+    /// Verifica se o propósito da sessão OTP é para recuperação de senha.
+    /// </summary>
+    /// <returns>Booleano indicando se o propósito é para recuperação de senha.</returns>
+    public bool IsForPasswordRecovery() => Purpose == OtpPurpose.PasswordRecovery;
+
+    /// <summary>
+    /// Verifica se o propósito da sessão OTP é para alteração de senha.
+    /// </summary>
+    /// <returns>Booleano indicando se o propósito é para alteração de senha.</returns>
+    public bool IsForPasswordChange() => Purpose == OtpPurpose.PasswordChange;
 }
