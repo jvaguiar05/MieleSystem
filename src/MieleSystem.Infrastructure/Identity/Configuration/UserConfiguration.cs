@@ -42,10 +42,11 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder
             .Property(x => x.Role)
+            .HasColumnName("Role")
             .HasConversion(role => role.Value, value => UserRole.FromValue(value))
             .IsRequired();
 
-        builder.Property(x => x.RegistrationSituation).IsRequired();
+        builder.Property(x => x.RegistrationSituation).HasConversion<int>().IsRequired();
 
         builder.Property(x => x.ExpiresAt).HasColumnType("date");
 
