@@ -182,7 +182,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     // -----------------------------
     // OTP lifecycle (owned by aggregate)
     // -----------------------------
-    public OtpSession AddOtpSession(OtpCode otp)
+    public OtpSession AddOtpSession(OtpCode otp, OtpPurpose purpose)
     {
         EnsureNotDeleted();
 
@@ -190,7 +190,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
             throw new DomainException("OTP inválido.");
 
         // estratégia simples: permitir múltiplas sessões; consumo controla validade
-        var session = new OtpSession(this, otp);
+        var session = new OtpSession(this, otp, purpose);
         _otpSessions.Add(session);
         return session;
     }
