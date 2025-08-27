@@ -11,7 +11,7 @@ using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 using MieleSystem.Infrastructure.Identity.Persistence.Stores;
 using MieleSystem.Infrastructure.Identity.Services;
 
-namespace MieleSystem.Infrastructure.Identity.Injection;
+namespace MieleSystem.Infrastructure.Identity;
 
 /// <summary>
 /// Extensões para registrar os serviços e dependências da camada Identity na injeção de dependência.

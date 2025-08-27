@@ -5,7 +5,7 @@ using MieleSystem.Application.Common.Interfaces;
 using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Infrastructure.Common.Persistence;
 using MieleSystem.Infrastructure.Common.Services;
-using MieleSystem.Infrastructure.Identity.Injection;
+using MieleSystem.Infrastructure.Identity;
 
 namespace MieleSystem.Infrastructure.Common;
 
