@@ -14,8 +14,5 @@ public sealed class ListUsersPagedHandler(IUserReadStore store)
     public async Task<PageResultDto<UserListItemDto>> Handle(
         ListUsersPagedQuery request,
         CancellationToken ct
-    )
-    {
-        return await _store.GetPagedAsync(request, ct);
-    }
+    ) => await _store.GetPagedAsync(request, ct);
 }

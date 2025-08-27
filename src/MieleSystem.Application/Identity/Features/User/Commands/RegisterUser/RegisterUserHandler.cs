@@ -13,7 +13,6 @@ namespace MieleSystem.Application.Identity.Features.User.Commands.RegisterUser;
 /// Valida e-mail, aplica hash na senha, define o papel (Role),
 /// persiste o agregado e dispara o evento de registro.
 /// </summary>
-
 public sealed class RegisterUserHandler(
     IUserRepository users,
     IPasswordHasher passwordHasher,
@@ -38,7 +37,7 @@ public sealed class RegisterUserHandler(
         var hashStr = _passwordHasher.Hash(request.Password);
         var passwordVo = new PasswordHash(hashStr);
 
-        // Define Role (padrão Viewer)
+        // Define Role (padrão Editor)
         var role = ResolveRoleOrDefault(request.Role);
 
         // Cria agregado e adiciona ao repositório
@@ -71,6 +70,10 @@ public sealed class RegisterUserHandler(
     {
         if (string.IsNullOrWhiteSpace(roleName))
             return UserRole.Editor;
+        else if (roleName.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            throw new UnauthorizedAccessException(
+                "Não é permitido registrar usuários com o cargo 'Admin'."
+            );
 
         return
             Enum.TryParse(typeof(UserRole), roleName, true, out var parsed)

@@ -1,5 +1,6 @@
 using MediatR;
 using MieleSystem.Application.Common.Responses;
+using MieleSystem.Domain.Identity.Enums;
 using MieleSystem.Domain.Identity.Repositories;
 using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Domain.Identity.ValueObjects;
@@ -21,19 +22,32 @@ public sealed class LoginUserHandler(
 
     public async Task<Result<string>> Handle(LoginUserCommand request, CancellationToken ct)
     {
+        // Normaliza e valida VOs básicos
         var emailVo = new Email(request.Email);
 
-        var user = await _users.GetByEmailAsync(emailVo, ct);
-        if (user is null)
-            return Result<string>.Failure("Usuário ou senha inválidos.");
+        // Busca usuário por email
+        var user =
+            await _users.GetByEmailAsync(emailVo, ct)
+            ?? throw new UnauthorizedAccessException(
+                $"Usuário com email {emailVo} não encontrado na base de dados."
+            );
 
+        // Verifica a senha
         var isPasswordValid = _passwordHasher.Verify(request.Password, user.PasswordHash.Value);
 
         if (!isPasswordValid)
-            return Result<string>.Failure("Usuário ou senha inválidos.");
+            throw new UnauthorizedAccessException("Senha inválida. Tente novamente.");
 
+        // Verifica a situação da conta
+        if (user.RegistrationSituation != UserRegistrationSituation.Accepted)
+            throw new UnauthorizedAccessException(
+                "Conta não autorizada. Aguarde a validação ou entre em contato com o suporte."
+            );
+
+        // Gera token JWT
         var token = _tokenService.GenerateAccessToken(user);
 
+        // Retorna o token gerado
         return Result<string>.Success(token);
     }
 }
