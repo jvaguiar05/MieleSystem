@@ -1,44 +1,55 @@
+using DotNetEnv;
+using Microsoft.Extensions.Configuration;
+using MieleSystem.Presentation.Injection;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// 1) Carrega .env -> vira variáveis de ambiente do processo
+Env.Load();
+
+// 2) Garante provider de env vars (normalmente já vem, mas deixamos explícito)
+builder.Configuration.AddEnvironmentVariables();
+
+// 3) (Opcional, mas útil) Se existir uma connection string vinda do .env,
+//    sobrescreve a DefaultConnection antes de expandir placeholders
+var envConn =
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");
+if (!string.IsNullOrWhiteSpace(envConn))
+{
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = envConn;
+}
+
+// 4) Expande placeholders ${VAR} presentes no appsettings.json
+ExpandEnvPlaceholders(builder.Configuration);
+
+builder.Services.AddAPI(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+app.UseAPI();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+static void ExpandEnvPlaceholders(IConfiguration config)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    // Percorre todas as chaves já carregadas e aplica Environment.ExpandEnvironmentVariables
+    foreach (var kvp in config.AsEnumerable())
+    {
+        var key = kvp.Key;
+        var value = kvp.Value;
+        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+            continue;
+
+        // Expande apenas se contiver ${...}
+        if (value.Contains("${"))
+        {
+            var expanded = Environment.ExpandEnvironmentVariables(value);
+            if (!ReferenceEquals(expanded, value))
+            {
+                // IConfiguration gerenciado por ConfigurationManager permite set
+                config[key] = expanded;
+            }
+        }
+    }
 }
