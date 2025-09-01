@@ -31,19 +31,35 @@ public static class InfrastructureIdentityInjection
         services.AddScoped<IUserReadStore, UserReadStore>();
 
         // Serviços de Hashing
-        services.Configure<BCryptOptions>(configuration.GetSection("Security:BCrypt"));
+        services.Configure<BCryptOptions>(
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
+                ? configuration.GetSection("Security:BCrypt")
+                : configuration.GetSection("Security:BCryptProduction")
+        );
         services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         // Serviços de geração de tokens
-        services.Configure<JwtOptions>(configuration.GetSection("Security:Jwt"));
+        services.Configure<JwtOptions>(
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
+                ? configuration.GetSection("Security:Jwt")
+                : configuration.GetSection("Security:JwtProduction")
+        );
         services.AddScoped<ITokenService, TokenService>();
 
         // Serviços de geração de OTP
-        services.Configure<OtpOptions>(configuration.GetSection("Security:Otp"));
+        services.Configure<OtpOptions>(
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
+                ? configuration.GetSection("Security:Otp")
+                : configuration.GetSection("Security:OtpProduction")
+        );
         services.AddScoped<IOtpService, OtpService>();
 
         // Serviços de envio de e-mail
-        services.Configure<EmailSenderOptions>(configuration.GetSection("Email"));
+        services.Configure<EmailSenderOptions>(
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
+                ? configuration.GetSection("Email")
+                : configuration.GetSection("EmailProduction")
+        );
         services.AddScoped<IAccountEmailService, AccountEmailService>();
 
         // Handlers de eventos

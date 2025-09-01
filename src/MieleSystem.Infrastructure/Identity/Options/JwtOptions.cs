@@ -2,8 +2,17 @@ namespace MieleSystem.Infrastructure.Identity.Options;
 
 public sealed class JwtOptions
 {
-    public string SecretKey { get; init; } = "KAJSDHJKSAHQJ1H231KJH21KJ3HE98UQ9DHQSDJASKDHAKJSH123";
-    public string Issuer { get; init; } = "MieleSystem";
-    public string Audience { get; init; } = "MieleSystemClient";
-    public int AccessTokenExpirationMinutes { get; init; } = 60;
+    public string SecretKey { get; init; } =
+        Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? "default_secret_key";
+    public string Issuer { get; init; } =
+        Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "MieleSystem";
+    public string Audience { get; init; } =
+        Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "MieleSystemClient";
+    public int AccessTokenExpirationMinutes { get; init; } =
+        int.TryParse(
+            Environment.GetEnvironmentVariable("JWT_ACCESS_EXPIRATION"),
+            out var expiration
+        )
+            ? expiration
+            : 60;
 }

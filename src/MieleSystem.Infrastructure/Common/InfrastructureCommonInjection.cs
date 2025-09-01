@@ -21,16 +21,18 @@ public static class InfrastructureCommonInjection
     {
         services.AddHttpContextAccessor();
 
+        // Obtém a string de conexão do ambiente ou do arquivo de configuração
+        var connectionString =
+            Environment.GetEnvironmentVariable("CONNECTION_STRINGS__DEFAULTCONNECTION")
+            ?? configuration.GetConnectionString("DefaultConnection");
+
         // DbContext compartilhado
         services.AddDbContext<MieleDbContext>(options =>
         {
             options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
+                connectionString,
                 npgsql => npgsql.MigrationsAssembly(typeof(MieleDbContext).Assembly.FullName)
             );
-
-            // Opcional: caso você use snake_case no PostgreSQL:
-            // options.UseSnakeCaseNamingConvention();
         });
 
         // Unit of Work
