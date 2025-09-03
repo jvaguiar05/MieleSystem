@@ -9,29 +9,8 @@ public static class TokenServicesInjection
 {
     public static IServiceCollection AddTokenServices(this IServiceCollection services)
     {
-        var jwtOptions = new JwtOptions
-        {
-            Secret =
-                Environment.GetEnvironmentVariable("JWT_SECRET")
-                ?? throw new InvalidOperationException("JWT_SECRET não foi configurado."),
-            Issuer =
-                Environment.GetEnvironmentVariable("JWT_ISSUER")
-                ?? throw new InvalidOperationException("JWT_ISSUER não foi configurado."),
-            Audience =
-                Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-                ?? throw new InvalidOperationException("JWT_AUDIENCE não foi configurado."),
-            AccessTokenExpiration = TimeSpan.FromMinutes(
-                double.TryParse(
-                    Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRATION"),
-                    out var expiration
-                )
-                    ? expiration
-                    : throw new InvalidOperationException("JWT_ACCESS_TOKEN_EXPIRATION é inválido.")
-            ),
-        };
-
-        jwtOptions.Validate();
-        services.AddSingleton(jwtOptions);
+        var serviceProvider = services.BuildServiceProvider();
+        var jwtOptions = serviceProvider.GetRequiredService<JwtOptions>();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

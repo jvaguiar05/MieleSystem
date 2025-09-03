@@ -1,5 +1,8 @@
 namespace MieleSystem.Infrastructure.Identity.Options;
 
+/// <summary>
+/// Opções para configuração do envio de e-mails.
+/// </summary>
 public sealed class EmailSenderOptions
 {
     public string FromEmail { get; init; } = default!;

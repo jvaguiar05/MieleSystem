@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MieleSystem.Application.Identity.Services;
 using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
@@ -30,31 +31,63 @@ public static class InfrastructureIdentityInjection
         // Read Stores
         services.AddScoped<IUserReadStore, UserReadStore>();
 
-        // Serviços de Hashing
-        services.Configure<BCryptOptions>(
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
-                ? configuration.GetSection("Security:BCrypt")
-                : configuration.GetSection("Security:BCryptProduction")
-        );
+        // Serviços de Hashing (appsettings.json / appsettings.{Environment}.json)
+        services
+            .AddOptions<BCryptOptions>()
+            .Bind(configuration.GetSection("Security:BCrypt"))
+            .Validate(
+                opt => opt.WorkFactor >= 4 && opt.WorkFactor <= 16,
+                "Security:BCrypt:WorkFactor deve estar entre 4 e 16."
+            )
+            .ValidateOnStart();
+
         services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         // Serviços de geração de tokens
         services.AddScoped<ITokenService, TokenService>();
 
-        // Serviços de geração de OTP
-        services.Configure<OtpOptions>(
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
-                ? configuration.GetSection("Security:Otp")
-                : configuration.GetSection("Security:OtpProduction")
-        );
+        // Serviços de geração de OTP (appsettings.json / appsettings.{Environment}.json)
+        services
+            .AddOptions<OtpOptions>()
+            .Bind(configuration.GetSection("Security:Otp"))
+            .Validate(
+                o => o.ExpirationSeconds >= 30 && o.ExpirationSeconds <= 3600,
+                "Security:Otp:ExpirationSeconds deve estar entre 30 e 3600."
+            )
+            .ValidateOnStart();
+
         services.AddScoped<IOtpService, OtpService>();
 
         // Serviços de envio de e-mail
-        services.Configure<EmailSenderOptions>(
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
-                ? configuration.GetSection("Email")
-                : configuration.GetSection("EmailProduction")
-        );
+        services
+            .AddOptions<EmailSenderOptions>()
+            .Bind(configuration.GetSection("Email"))
+            .Validate(
+                opt =>
+                    !string.IsNullOrWhiteSpace(opt.FromEmail)
+                    && !string.IsNullOrWhiteSpace(opt.FromName)
+                    && !string.IsNullOrWhiteSpace(opt.SmtpHost)
+                    && opt.SmtpPort > 0
+                    && !string.IsNullOrWhiteSpace(opt.SmtpUsername)
+                    && !string.IsNullOrWhiteSpace(opt.SmtpPassword),
+                "Configuração inválida para Email (seção 'Email')."
+            )
+            .ValidateOnStart();
+
+        // Validação das opções do JWT
+        services
+            .AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection("Security:Jwt"))
+            .Validate(opt =>
+            {
+                opt.Validate();
+                return true;
+            })
+            .ValidateOnStart();
+
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtOptions>>().Value);
+
+        services.AddScoped<IEmailTemplateRenderer, SimpleEmailTemplateRenderer>();
         services.AddScoped<IAccountEmailService, AccountEmailService>();
 
         // Handlers de eventos

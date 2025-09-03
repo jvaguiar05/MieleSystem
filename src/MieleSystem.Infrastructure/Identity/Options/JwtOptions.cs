@@ -7,22 +7,30 @@ public sealed class JwtOptions
     public string Secret { get; set; } = string.Empty;
     public string Issuer { get; set; } = string.Empty;
     public string Audience { get; set; } = string.Empty;
-    public TimeSpan AccessTokenExpiration { get; set; }
+
+    // Propriedade para receber o valor numérico (ex: 180)
+    public int AccessTokenExpirationInMinutes { get; set; }
+
+    // Propriedade calculada para uso no código
+    public TimeSpan AccessTokenExpiration => TimeSpan.FromMinutes(AccessTokenExpirationInMinutes);
 
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Secret) || Encoding.UTF8.GetBytes(Secret).Length < 32)
-            throw new InvalidOperationException("JWT_SECRET deve ter pelo menos 32 caracteres.");
+            throw new InvalidOperationException(
+                "Security:Jwt:Secret deve ter pelo menos 32 caracteres."
+            );
 
         if (string.IsNullOrWhiteSpace(Issuer))
-            throw new InvalidOperationException("JWT_ISSUER não pode ser vazio.");
+            throw new InvalidOperationException("Security:Jwt:Issuer não pode ser vazio.");
 
         if (string.IsNullOrWhiteSpace(Audience))
-            throw new InvalidOperationException("JWT_AUDIENCE não pode ser vazio.");
+            throw new InvalidOperationException("Security:Jwt:Audience não pode ser vazio.");
 
-        if (AccessTokenExpiration <= TimeSpan.Zero)
+        // Validando a nova propriedade
+        if (AccessTokenExpirationInMinutes <= 0)
             throw new InvalidOperationException(
-                "JWT_ACCESS_TOKEN_EXPIRATION deve ser maior que zero."
+                "Security:Jwt:AccessTokenExpirationInMinutes deve ser maior que zero."
             );
     }
 }

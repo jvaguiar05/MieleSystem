@@ -11,16 +11,22 @@ public sealed class AccountEmailService : IAccountEmailService
 {
     private readonly EmailSenderOptions _options;
     private readonly SmtpClient _smtp;
-    private readonly SimpleEmailTemplateRenderer _templates = new();
+    private readonly IEmailTemplateRenderer _templates;
 
-    public AccountEmailService(IOptions<EmailSenderOptions> options)
+    public AccountEmailService(
+        IOptions<EmailSenderOptions> options,
+        IEmailTemplateRenderer templates
+    )
     {
         _options = options.Value;
+        _templates = templates;
 
         _smtp = new SmtpClient(_options.SmtpHost, _options.SmtpPort)
         {
-            Credentials = new NetworkCredential(_options.FromEmail, _options.SmtpPassword),
+            UseDefaultCredentials = false,
+            Credentials = new NetworkCredential(_options.SmtpUsername, _options.SmtpPassword),
             EnableSsl = _options.UseSsl,
+            DeliveryMethod = SmtpDeliveryMethod.Network,
         };
     }
 
@@ -74,7 +80,6 @@ public sealed class AccountEmailService : IAccountEmailService
         };
 
         message.To.Add(to.Value);
-
         await _smtp.SendMailAsync(message, ct);
     }
 }
