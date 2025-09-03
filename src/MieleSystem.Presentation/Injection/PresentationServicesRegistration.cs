@@ -1,7 +1,6 @@
 using Microsoft.OpenApi.Models;
 using MieleSystem.Application.Common;
 using MieleSystem.Infrastructure.Common;
-using MieleSystem.Infrastructure.Identity;
 
 namespace MieleSystem.Presentation.Injection;
 
@@ -61,7 +60,8 @@ public static class PresentationServicesRegistration
 
         services.AddApplicationCommon();
         services.AddInfrastructureCommon(configuration);
-        services.AddIdentityInfrastructure(configuration);
+
+        services.AddTokenServices();
 
         return services;
     }

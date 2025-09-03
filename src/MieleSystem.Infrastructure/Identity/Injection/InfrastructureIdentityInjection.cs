@@ -11,7 +11,7 @@ using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 using MieleSystem.Infrastructure.Identity.Persistence.Stores;
 using MieleSystem.Infrastructure.Identity.Services;
 
-namespace MieleSystem.Infrastructure.Identity;
+namespace MieleSystem.Infrastructure.Identity.Injection;
 
 /// <summary>
 /// Extensões para registrar os serviços e dependências da camada Identity na injeção de dependência.
@@ -39,11 +39,6 @@ public static class InfrastructureIdentityInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         // Serviços de geração de tokens
-        services.Configure<JwtOptions>(
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
-                ? configuration.GetSection("Security:Jwt")
-                : configuration.GetSection("Security:JwtProduction")
-        );
         services.AddScoped<ITokenService, TokenService>();
 
         // Serviços de geração de OTP

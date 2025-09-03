@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MieleSystem.Application.Identity.Features.User.Commands.LoginUser;
 using MieleSystem.Application.Identity.Features.User.Commands.RegisterUser;
@@ -17,6 +18,7 @@ public class AuthController(IHttpContextAccessor httpContextAccessor, IMediator 
     /// Register a new user.
     /// </summary>
     /// <returns>Public ID (Guid) of the registered user.</returns>
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserCommand command)
     {
@@ -28,6 +30,7 @@ public class AuthController(IHttpContextAccessor httpContextAccessor, IMediator 
     /// Login an existing user.
     /// </summary>
     /// <returns>Access token (JWT) for the logged-in user.</returns>
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginUserCommand command)
     {

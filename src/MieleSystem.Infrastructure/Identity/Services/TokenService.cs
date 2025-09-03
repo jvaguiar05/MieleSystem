@@ -20,7 +20,7 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
 
     public string GenerateAccessToken(User user)
     {
-        var key = Encoding.UTF8.GetBytes(_options.SecretKey);
+        var key = Encoding.UTF8.GetBytes(_options.Secret);
 
         var claims = new List<Claim>
         {
@@ -34,7 +34,7 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
             Subject = new ClaimsIdentity(claims),
             Issuer = _options.Issuer,
             Audience = _options.Audience,
-            Expires = DateTime.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes),
+            Expires = DateTime.UtcNow.AddMinutes(_options.AccessTokenExpiration.TotalMinutes),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature
