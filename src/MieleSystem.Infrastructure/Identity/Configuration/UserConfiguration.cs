@@ -37,7 +37,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder
             .Property(x => x.PasswordHash)
             .HasConversion(hash => hash.Value, value => new PasswordHash(value))
-            .HasMaxLength(100)
+            .HasMaxLength(255)
             .IsRequired();
 
         builder
