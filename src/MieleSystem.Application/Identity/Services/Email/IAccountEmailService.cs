@@ -46,10 +46,10 @@ public interface IAccountEmailService
     Task SendPasswordChangedAsync(Mail to, DateTime changedAtUtc, CancellationToken ct = default);
 
     /// <summary>
-    /// Envia um e-mail notificando que a conta foi ativada.
+    /// Envia um e-mail notificando que o registro foi aprovado.
     /// </summary>
     /// <param name="to">Endereço de e-mail de destino.</param>
     /// <param name="userName">Nome de exibição do usuário.</param>
     /// <param name="ct">Token de cancelamento opcional.</param>
-    Task SendAccountActivatedAsync(Mail to, string userName, CancellationToken ct = default);
+    Task SendRegistrationApprovedAsync(Mail to, string userName, CancellationToken ct = default);
 }

@@ -15,6 +15,7 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
         public const string Welcome = "Welcome";
         public const string Otp = "OTP";
         public const string PasswordChanged = "PasswordChanged";
+        public const string RegistrationApproved = "RegistrationApproved";
     }
 
     private static class EmailSubjects
@@ -22,6 +23,7 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
         public const string Welcome = "Bem-vindo ao MieleSystem!";
         public const string Otp = "Código de verificação - MieleSystem";
         public const string PasswordChanged = "Sua senha foi alterada";
+        public const string RegistrationApproved = "Sua conta foi aprovada - MieleSystem";
     }
 
     private readonly IEmailSender _emailSender;
@@ -169,13 +171,14 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
     }
 
     /// <summary>
-    /// Envia um e-mail notificando que a conta foi ativada.
+    /// Envia um e-mail notificando que o registro foi aprovado.
     /// </summary>
     /// <param name="to">Endereço de e-mail de destino.</param>
     /// <param name="userName">Nome de exibição do usuário.</param>
     /// <param name="ct">Token de cancelamento opcional.</param>
-    /// <returns></returns>
-    public async Task SendAccountActivatedAsync(
+    /// <exception cref="ArgumentNullException">Quando 'to' ou 'userName' são null ou vazios.</exception>
+    /// <exception cref="ObjectDisposedException">Quando o serviço foi descartado.</exception>
+    public async Task SendRegistrationApprovedAsync(
         EmailObject to,
         string userName,
         CancellationToken ct = default
@@ -187,18 +190,18 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
 
         try
         {
-            _loggingService.LogSendingEmail("AccountActivated", to.Value);
+            _loggingService.LogSendingEmail(EmailTypes.RegistrationApproved, to.Value);
 
-            var subject = "Conta Ativada - MieleSystem";
-            var body = await _templateService.RenderAccountActivatedTemplateAsync(userName);
+            var subject = EmailSubjects.RegistrationApproved;
+            var body = await _templateService.RenderRegistrationApprovedTemplateAsync(userName);
 
             await _emailSender.SendAsync(to, subject, body, ct);
 
-            _loggingService.LogEmailSentSuccessfully("AccountActivated", to.Value);
+            _loggingService.LogEmailSentSuccessfully(EmailTypes.RegistrationApproved, to.Value);
         }
         catch (Exception ex)
         {
-            _loggingService.LogEmailSendFailed("AccountActivated", to.Value, ex);
+            _loggingService.LogEmailSendFailed(EmailTypes.RegistrationApproved, to.Value, ex);
             throw;
         }
     }

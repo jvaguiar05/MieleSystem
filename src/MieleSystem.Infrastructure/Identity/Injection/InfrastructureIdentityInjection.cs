@@ -6,6 +6,7 @@ using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
 using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Email;
+using MieleSystem.Infrastructure.Identity.Events.Admin;
 using MieleSystem.Infrastructure.Identity.Events.User;
 using MieleSystem.Infrastructure.Identity.Options;
 using MieleSystem.Infrastructure.Identity.Persistence.Repositories;

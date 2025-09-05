@@ -94,15 +94,15 @@ public sealed class EmailTemplateService : IEmailTemplateService
     }
 
     /// <summary>
-    /// Renderiza o template de aviso de conta ativada.
+    /// Renderiza o template de aprovação de registro.
     /// </summary>
     /// <param name="userName">Nome do usuário.</param>
     /// <returns>Conteúdo HTML do template.</returns>
-    public async Task<string> RenderAccountActivatedTemplateAsync(string userName)
+    public async Task<string> RenderRegistrationApprovedTemplateAsync(string userName)
     {
         return await RenderTemplateAsync(
-            () => _templateRenderer.RenderAccountActivated(userName),
-            "AccountActivated"
+            () => _templateRenderer.RenderRegistrationApproved(userName),
+            "RegistrationApproved"
         );
     }
 }

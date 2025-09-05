@@ -73,15 +73,22 @@ public sealed class SimpleEmailTemplateRenderer : IEmailTemplateRenderer
             """;
     }
 
-    public string RenderAccountActivated(string userName)
+    public string RenderRegistrationApproved(string userName)
     {
         return $"""
                 <html>
                     <body style="font-family: sans-serif; line-height: 1.5;">
-                        <h2>Conta Ativada</h2>
+                        <h2>🎉 Sua conta foi aprovada!</h2>
                         <p>Olá {userName},</p>
-                        <p>Sua conta no MieleSystem foi ativada com sucesso!</p>
-                        <p>Agora você pode acessar sua conta e explorar todas as funcionalidades do sistema.</p>
+                        <p>Ótimas notícias! Seu cadastro no MieleSystem foi aprovado por um administrador.</p>
+                        <p>Sua conta está agora ativa e pronta para uso. Você pode fazer login e explorar todas as funcionalidades do sistema.</p>
+                        <br/>
+                        <p><strong>Próximos passos:</strong></p>
+                        <ul>
+                            <li>Faça login em sua conta</li>
+                            <li>Explore as funcionalidades disponíveis</li>
+                            <li>Configure seu perfil conforme necessário</li>
+                        </ul>
                         <br/>
                         <p>Se tiver dúvidas ou precisar de ajuda, entre em contato com nosso suporte.</p>
                         <br/>
