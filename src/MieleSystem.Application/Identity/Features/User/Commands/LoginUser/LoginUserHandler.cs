@@ -33,7 +33,7 @@ public sealed class LoginUserHandler(
             );
 
         // Verifica a senha
-        var isPasswordValid = _passwordHasher.Verify(request.Password, user.PasswordHash.Value);
+        var isPasswordValid = _passwordHasher.Verify(user.PasswordHash.Value, request.Password);
 
         if (!isPasswordValid)
             throw new UnauthorizedAccessException("Senha inválida. Tente novamente.");
