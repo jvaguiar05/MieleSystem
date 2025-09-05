@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MieleSystem.Application.Common.Events;
 using MieleSystem.Application.Identity.Services.Email;
+using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Domain.Identity.Entities;
 using MieleSystem.Domain.Identity.Events.Admin;
 using MieleSystem.Domain.Identity.Repositories;
@@ -16,12 +17,14 @@ public sealed class UserRegistrationApprovedEventHandler(
     IAccountEmailService emailService,
     IUserAuditLogRepository auditLogRepository,
     IUserRepository userRepository,
+    IUnitOfWork unitOfWork,
     ILogger<UserRegistrationApprovedEventHandler> logger
 ) : INotificationHandler<EventNotification<UserRegistrationApprovedEvent>>
 {
     private readonly IAccountEmailService _emailService = emailService;
     private readonly IUserAuditLogRepository _auditLogRepository = auditLogRepository;
     private readonly IUserRepository _userRepository = userRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ILogger<UserRegistrationApprovedEventHandler> _logger = logger;
 
     public async Task Handle(
@@ -71,6 +74,7 @@ public sealed class UserRegistrationApprovedEventHandler(
         );
 
         await _auditLogRepository.AddAsync(log, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "🗒️ Log de auditoria registrado para aprovação do usuário: {UserId}",
