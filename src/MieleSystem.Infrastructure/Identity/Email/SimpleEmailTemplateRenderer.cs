@@ -1,5 +1,5 @@
 using System.Globalization;
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Email;
 
 namespace MieleSystem.Infrastructure.Identity.Email;
 
@@ -16,6 +16,10 @@ public sealed class SimpleEmailTemplateRenderer : IEmailTemplateRenderer
                         <h2>Bem-vindo ao MieleSystem, {userName}!</h2>
                         <p>Estamos felizes em tê-lo(a) conosco.</p>
                         <p>Se tiver dúvidas ou precisar de ajuda, entre em contato com nosso suporte.</p>
+                        <br/>
+                        <p>Para começar, aguarde a aprovação do seu cadastro por um administrador.</p>
+                        <p>Assim que aprovado, você poderá acessar sua conta e explorar todas as funcionalidades do MieleSystem.</p>
+                        <p>Entraremos em contato assim que sua conta for ativada.</p>
                         <br/>
                         <p>Atenciosamente,</p>
                         <strong>Equipe MieleSystem</strong>

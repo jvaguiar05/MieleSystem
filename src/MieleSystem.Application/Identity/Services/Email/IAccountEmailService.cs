@@ -1,6 +1,6 @@
-using MieleSystem.Domain.Identity.ValueObjects;
+using Mail = MieleSystem.Domain.Identity.ValueObjects.Email;
 
-namespace MieleSystem.Application.Identity.Services;
+namespace MieleSystem.Application.Identity.Services.Email;
 
 /// <summary>
 /// Serviço de envio de e-mails relacionado a operações de conta no contexto de Identity.
@@ -26,7 +26,7 @@ public interface IAccountEmailService
     /// <param name="to">Endereço de e-mail de destino, encapsulado no VO <see cref="Email"/>.</param>
     /// <param name="userName">Nome de exibição do usuário.</param>
     /// <param name="ct">Token de cancelamento opcional.</param>
-    Task SendWelcomeAsync(Email to, string userName, CancellationToken ct = default);
+    Task SendWelcomeAsync(Mail to, string userName, CancellationToken ct = default);
 
     /// <summary>
     /// Envia um e-mail contendo código OTP para autenticação de dois fatores.
@@ -35,7 +35,7 @@ public interface IAccountEmailService
     /// <param name="code">Código OTP a ser enviado.</param>
     /// <param name="expiresAtUtc">Data e hora de expiração do código (em UTC).</param>
     /// <param name="ct">Token de cancelamento opcional.</param>
-    Task SendOtpAsync(Email to, string code, DateTime expiresAtUtc, CancellationToken ct = default);
+    Task SendOtpAsync(Mail to, string code, DateTime expiresAtUtc, CancellationToken ct = default);
 
     /// <summary>
     /// Envia um e-mail notificando alteração de senha na conta.
@@ -43,5 +43,5 @@ public interface IAccountEmailService
     /// <param name="to">Endereço de e-mail de destino.</param>
     /// <param name="changedAtUtc">Data e hora da alteração (em UTC).</param>
     /// <param name="ct">Token de cancelamento opcional.</param>
-    Task SendPasswordChangedAsync(Email to, DateTime changedAtUtc, CancellationToken ct = default);
+    Task SendPasswordChangedAsync(Mail to, DateTime changedAtUtc, CancellationToken ct = default);
 }

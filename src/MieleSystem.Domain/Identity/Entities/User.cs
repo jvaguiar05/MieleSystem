@@ -77,7 +77,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     {
         EnsureNotDeleted();
 
-        AddDomainEvent(new UserRegisteredEvent(Id, PublicId, Role, Email));
+        AddDomainEvent(new UserRegisteredEvent(Id, PublicId, Role, Email, Name));
     }
 
     public void ChangeName(string newName)

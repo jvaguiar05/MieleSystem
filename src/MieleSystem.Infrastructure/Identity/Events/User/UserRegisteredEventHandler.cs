@@ -35,7 +35,11 @@ public sealed class UserRegisteredEventHandler(
             domainEvent.UserPublicId
         );
 
-        await _emailService.SendWelcomeAsync(domainEvent.Email, "Usuário Miele", cancellationToken);
+        await _emailService.SendWelcomeAsync(
+            domainEvent.Email,
+            domainEvent.UserName,
+            cancellationToken
+        );
 
         _logger.LogInformation("✅ E-mail enviado com sucesso para: {Email}", domainEvent.Email);
 

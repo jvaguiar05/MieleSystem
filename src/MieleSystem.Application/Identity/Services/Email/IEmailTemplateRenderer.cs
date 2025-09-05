@@ -1,4 +1,4 @@
-namespace MieleSystem.Application.Identity.Services;
+namespace MieleSystem.Application.Identity.Services.Email;
 
 /// <summary>
 /// Responsável por renderizar o conteúdo (body) de e-mails enviados no contexto de Identity.
