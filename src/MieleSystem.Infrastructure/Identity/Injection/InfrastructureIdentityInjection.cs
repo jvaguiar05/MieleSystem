@@ -74,6 +74,15 @@ public static class InfrastructureIdentityInjection
             )
             .ValidateOnStart();
 
+        // Serviços de e-mail modularizados
+        services.AddScoped<IEmailTemplateRenderer, SimpleEmailTemplateRenderer>();
+        services.AddScoped<IEmailValidator, EmailValidator>();
+        services.AddScoped<EmailConfigurationValidator>();
+        services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+        services.AddScoped<IEmailLoggingService, EmailLoggingService>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<IAccountEmailService, AccountEmailService>();
+
         // Validação das opções do JWT
         services
             .AddOptions<JwtOptions>()
@@ -86,9 +95,6 @@ public static class InfrastructureIdentityInjection
             .ValidateOnStart();
 
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtOptions>>().Value);
-
-        services.AddScoped<IEmailTemplateRenderer, SimpleEmailTemplateRenderer>();
-        services.AddScoped<IAccountEmailService, AccountEmailService>();
 
         // Handlers de eventos
         services.AddMediatR(cfg =>
