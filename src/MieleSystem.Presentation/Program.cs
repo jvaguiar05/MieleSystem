@@ -3,287 +3,195 @@ using Microsoft.Extensions.Options;
 using MieleSystem.Presentation.Injection;
 using MieleSystem.Presentation.Utils;
 
-namespace MieleSystem.Presentation;
+// ====================================================================================
+// Ponto de Entrada (Entry Point) da Aplicação MieleSystem
+//
+// Este arquivo é responsável pela inicialização, configuração de serviços,
+// definição do pipeline de requisições HTTP e execução da aplicação web.
+// A estrutura utiliza "top-level statements" do C# 10 para uma configuração
+// mais limpa e linear, totalmente compatível com ferramentas de design-time
+// como o Entity Framework Core.
+// ====================================================================================
+
+
+// ====================================================================================
+// FASE 1: Configuração do Application Builder
+//
+// Inicializa o construtor da aplicação web (`WebApplicationBuilder`), que serve como
+// o principal container para registrar serviços, configurações e logging.
+// ====================================================================================
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configura os provedores e níveis de logging para a aplicação.
+ConfigureLogging(builder);
+
+// Carrega as variáveis de ambiente de arquivos .env e do sistema operacional.
+LoadEnvironmentConfiguration(builder);
+
+// Registra todos os serviços da aplicação no container de injeção de dependência.
+RegisterApplicationServices(builder);
+
+// ====================================================================================
+// FASE 2: Construção da Aplicação
+//
+// Cria a instância da aplicação (`WebApplication`) a partir da configuração do builder.
+// Neste ponto, o container de injeção de dependência (IServiceProvider) é finalizado
+// e todos os serviços registrados estão prontos para serem usados.
+// ====================================================================================
+
+var app = builder.Build();
+
+// ====================================================================================
+// FASE 3: Configuração do Pipeline de Requisições HTTP
+//
+// Define a sequência de middleware que irá processar cada requisição HTTP recebida.
+// A ordem de registro dos middlewares é crucial para o correto funcionamento da
+// aplicação (ex: autenticação deve vir antes da autorização).
+// ====================================================================================
+
+ConfigureApplicationPipeline(app);
+
+// ====================================================================================
+// FASE 4: Execução da Aplicação
+//
+// Contém a lógica de inicialização final, como validações e logging de status,
+// antes de efetivamente iniciar o servidor web para escutar por requisições.
+// O bloco try-catch garante que qualquer falha crítica na inicialização seja
+// registrada adequadamente.
+// ====================================================================================
+
+// Obtém uma instância do logger para registrar o processo de inicialização.
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+try
+{
+    // Registra informações detalhadas sobre a inicialização da aplicação.
+    LogApplicationStartupInfo(logger, app.Environment);
+
+    // Executa validações de configuração apenas em ambiente de desenvolvimento.
+    if (app.Environment.IsDevelopment())
+    {
+        await ValidateConfigurationAsync(logger, app.Services);
+    }
+
+    logger.LogInformation("🚀 Aplicação MieleSystem pronta para receber requisições.");
+
+    // Inicia a aplicação, bloqueando a thread para escutar por requisições HTTP.
+    await app.RunAsync();
+}
+catch (OptionsValidationException ex)
+{
+    // Captura erros específicos de validação de configurações (IOptions).
+    logger.LogCritical(
+        ex,
+        "❌ Falha crítica na validação da configuração. A aplicação será encerrada."
+    );
+    // Encerra a aplicação com um código de erro.
+    Environment.ExitCode = 1;
+}
+catch (Exception ex)
+{
+    // Captura qualquer outra exceção crítica durante a inicialização.
+    logger.LogCritical(
+        ex,
+        "❌ Erro crítico não tratado durante a inicialização. A aplicação será encerrada."
+    );
+    Environment.ExitCode = 1;
+}
+
+// ====================================================================================
+// MÉTODOS AUXILIARES DE CONFIGURAÇÃO
+//
+// Funções estáticas que encapsulam a lógica de configuração para manter o
+// fluxo principal do programa limpo e organizado.
+// ====================================================================================
 
 /// <summary>
-/// Ponto de entrada principal da aplicação MieleSystem.
-/// Esta classe gerencia a inicialização da aplicação, carregamento de configurações e registro de serviços.
+/// Configura os provedores de logging para a aplicação.
+/// Limpa provedores padrão e adiciona Console, Debug e outros baseados no ambiente.
 /// </summary>
-public class Program
+/// <param name="builder">A instância do WebApplicationBuilder para configurar o logging.</param>
+void ConfigureLogging(WebApplicationBuilder builder)
 {
-    /// <summary>
-    /// Ponto de entrada da aplicação.
-    /// </summary>
-    /// <param name="args">Argumentos da linha de comando</param>
-    /// <returns>Código de saída indicando sucesso ou falha</returns>
-    public static async Task<int> Main(string[] args)
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddDebug();
+
+    if (builder.Environment.IsProduction())
     {
-        try
-        {
-            // Inicializa a aplicação
-            var app = await CreateApplicationAsync(args);
-
-            // Configura e inicia a aplicação
-            await ConfigureAndStartApplicationAsync(app);
-
-            return 0; // Sucesso
-        }
-        catch (Exception ex)
-        {
-            // Registra falha crítica na inicialização
-            Console.WriteLine($"❌ Erro crítico durante a inicialização da aplicação: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            return 1; // Falha
-        }
-    }
-
-    /// <summary>
-    /// Cria e configura a instância do WebApplication.
-    /// </summary>
-    /// <param name="args">Argumentos da linha de comando</param>
-    /// <returns>Instância configurada do WebApplication</returns>
-    private static async Task<WebApplication> CreateApplicationAsync(string[] args)
-    {
-        // Cria o construtor da aplicação
-        var builder = WebApplication.CreateBuilder(args);
-
-        // Configura o sistema de logging
-        ConfigureLogging(builder);
-
-        // Carrega configurações do ambiente
-        await LoadEnvironmentConfigurationAsync(builder);
-
-        // Registra serviços da aplicação
-        RegisterApplicationServices(builder);
-
-        // Constrói a aplicação
-        var app = builder.Build();
-
-        // Configura o pipeline da aplicação
-        ConfigureApplicationPipeline(app);
-
-        return app;
-    }
-
-    /// <summary>
-    /// Configura logging estruturado para a aplicação.
-    /// </summary>
-    /// <param name="builder">Instância do WebApplicationBuilder</param>
-    private static void ConfigureLogging(WebApplicationBuilder builder)
-    {
-        // Configura logging com configurações específicas do ambiente
-        builder.Logging.ClearProviders();
-        builder.Logging.AddConsole();
-        builder.Logging.AddDebug();
-
-        // Adiciona logging estruturado em produção
-        if (builder.Environment.IsProduction())
-        {
-            // Em produção, você pode adicionar outros provedores como Serilog, Application Insights, etc.
-            builder.Logging.AddEventSourceLogger();
-        }
-    }
-
-    /// <summary>
-    /// Carrega configurações do ambiente a partir de arquivos .env e variáveis de ambiente.
-    /// </summary>
-    /// <param name="builder">Instância do WebApplicationBuilder</param>
-    private static Task LoadEnvironmentConfigurationAsync(WebApplicationBuilder builder)
-    {
-        try
-        {
-            // Carrega arquivo .env se existir (ambiente de desenvolvimento)
-            if (File.Exists(".env"))
-            {
-                Env.Load();
-                Console.WriteLine("✅ Variáveis de ambiente carregadas do arquivo .env");
-            }
-            else if (builder.Environment.IsDevelopment())
-            {
-                Console.WriteLine(
-                    "⚠️  Aviso: Arquivo .env não encontrado no ambiente de desenvolvimento"
-                );
-            }
-
-            // Adiciona variáveis de ambiente como fonte de configuração
-            // Isso é CRÍTICO para o funcionamento correto da aplicação
-            builder.Configuration.AddEnvironmentVariables();
-
-            Console.WriteLine("✅ Variáveis de ambiente registradas como fonte de configuração");
-
-            return Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Erro ao carregar configurações do ambiente: {ex.Message}");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Registra todos os serviços da aplicação com injeção de dependência.
-    /// </summary>
-    /// <param name="builder">Instância do WebApplicationBuilder</param>
-    private static void RegisterApplicationServices(WebApplicationBuilder builder)
-    {
-        try
-        {
-            // Registra serviços da API (inclui todas as camadas: Application, Infrastructure, Domain)
-            builder.Services.AddAPI(builder.Configuration);
-
-            Console.WriteLine("✅ Serviços da aplicação registrados com sucesso");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Erro ao registrar serviços da aplicação: {ex.Message}");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Configura o pipeline da aplicação e middleware.
-    /// </summary>
-    /// <param name="app">Instância do WebApplication</param>
-    private static void ConfigureApplicationPipeline(WebApplication app)
-    {
-        try
-        {
-            // Configura pipeline de middleware da API
-            app.UseAPI();
-
-            Console.WriteLine("✅ Pipeline da aplicação configurado com sucesso");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Erro ao configurar pipeline da aplicação: {ex.Message}");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Configura e inicia a aplicação com tratamento de erro adequado e logging.
-    /// </summary>
-    /// <param name="app">Instância do WebApplication</param>
-    private static async Task ConfigureAndStartApplicationAsync(WebApplication app)
-    {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-
-        try
-        {
-            // Registra informações de inicialização da aplicação
-            LogApplicationStartupInfo(logger, app.Environment);
-
-            // Valida configuração no ambiente de desenvolvimento
-            if (app.Environment.IsDevelopment())
-            {
-                await ValidateConfigurationAsync(logger, app.Services);
-            }
-
-            // Registra inicialização bem-sucedida
-            logger.LogInformation("🚀 Aplicação MieleSystem iniciada com sucesso");
-            logger.LogInformation("🌍 Ambiente: {Environment}", app.Environment.EnvironmentName);
-            logger.LogInformation(
-                "🔧 Configuração carregada de: {ConfigurationSources}",
-                string.Join(", ", GetConfigurationSources(app.Environment))
-            );
-
-            // Inicia a aplicação
-            await app.RunAsync();
-        }
-        catch (OptionsValidationException ex)
-        {
-            logger.LogCritical(
-                ex,
-                "❌ Falha na validação da configuração! Verifique seu appsettings.json ou arquivo .env. "
-                    + "Erro: {ErrorMessage}",
-                ex.Message
-            );
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(
-                ex,
-                "❌ Erro crítico durante a inicialização da aplicação: {ErrorMessage}",
-                ex.Message
-            );
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Registra informações de inicialização da aplicação.
-    /// </summary>
-    /// <param name="logger">Instância do logger</param>
-    /// <param name="environment">Ambiente de hospedagem web</param>
-    private static void LogApplicationStartupInfo(ILogger logger, IWebHostEnvironment environment)
-    {
-        logger.LogInformation("=".PadRight(60, '='));
-        logger.LogInformation("🎯 Iniciando Aplicação MieleSystem");
-        logger.LogInformation("=".PadRight(60, '='));
-        logger.LogInformation(
-            "📅 Iniciado em: {StartTime}",
-            DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC")
-        );
-        logger.LogInformation("🌍 Ambiente: {Environment}", environment.EnvironmentName);
-        logger.LogInformation(
-            "📁 Diretório de Conteúdo: {ContentRoot}",
-            environment.ContentRootPath
-        );
-        logger.LogInformation("🌐 Diretório Web: {WebRoot}", environment.WebRootPath);
-        logger.LogInformation("=".PadRight(60, '='));
-    }
-
-    /// <summary>
-    /// Valida configuração da aplicação no ambiente de desenvolvimento.
-    /// </summary>
-    /// <param name="logger">Instância do logger</param>
-    /// <param name="serviceProvider">Provedor de serviços</param>
-    private static Task ValidateConfigurationAsync(ILogger logger, IServiceProvider serviceProvider)
-    {
-        try
-        {
-            logger.LogInformation("🔍 Validando configuração da aplicação...");
-
-            // Usa o ConfigurationLogger para validar e registrar todas as configurações
-            ConfigurationLogger.LogConfigurationVariables(logger, serviceProvider);
-
-            logger.LogInformation("✅ Validação da configuração concluída com sucesso");
-
-            return Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "❌ Falha na validação da configuração: {ErrorMessage}", ex.Message);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Obtém a lista de fontes de configuração baseadas no ambiente.
-    /// </summary>
-    /// <param name="environment">Ambiente de hospedagem web</param>
-    /// <returns>Lista de fontes de configuração</returns>
-    private static string[] GetConfigurationSources(IWebHostEnvironment environment)
-    {
-        var sources = new List<string> { "appsettings.json" };
-
-        if (environment.IsDevelopment())
-        {
-            sources.Add("appsettings.Development.json");
-            sources.Add("arquivo .env");
-        }
-        else if (environment.IsStaging())
-        {
-            sources.Add("appsettings.Staging.json");
-        }
-        else if (environment.IsProduction())
-        {
-            sources.Add("appsettings.Production.json");
-        }
-
-        sources.Add("Variáveis de Ambiente");
-
-        return sources.ToArray();
+        builder.Logging.AddEventSourceLogger();
     }
 }
+
+/// <summary>
+/// Carrega configurações de ambiente a partir de um arquivo .env e das variáveis de ambiente do sistema.
+/// </summary>
+/// <param name="builder">A instância do WebApplicationBuilder para adicionar fontes de configuração.</param>
+void LoadEnvironmentConfiguration(WebApplicationBuilder builder)
+{
+    if (File.Exists(".env"))
+    {
+        Env.Load();
+        Console.WriteLine("✅ Variáveis de ambiente carregadas do arquivo .env");
+    }
+    builder.Configuration.AddEnvironmentVariables();
+    Console.WriteLine("✅ Variáveis de ambiente registradas como fonte de configuração");
+}
+
+/// <summary>
+/// Invoca os métodos de extensão para registrar todos os serviços da aplicação
+/// (Application, Infrastructure, Domain) no container de DI.
+/// </summary>
+/// <param name="builder">A instância do WebApplicationBuilder para registrar serviços.</param>
+void RegisterApplicationServices(WebApplicationBuilder builder)
+{
+    // O método AddAPI encapsula o registro de todas as camadas da aplicação.
+    builder.Services.AddAPI(builder.Configuration);
+    Console.WriteLine("✅ Serviços da aplicação registrados com sucesso");
+}
+
+/// <summary>
+/// Invoca os métodos de extensão para configurar o pipeline de middleware da API.
+/// </summary>
+/// <param name="app">A instância da aplicação WebApplication.</param>
+void ConfigureApplicationPipeline(WebApplication app)
+{
+    // O método UseAPI encapsula a configuração de todos os middlewares (Swagger, Auth, etc.).
+    app.UseAPI();
+    Console.WriteLine("✅ Pipeline da aplicação configurado com sucesso");
+}
+
+/// <summary>
+/// Registra no log informações detalhadas sobre o ambiente de inicialização da aplicação.
+/// </summary>
+/// <param name="logger">A instância do logger a ser utilizada.</param>
+/// <param name="environment">Informações sobre o ambiente de hospedagem.</param>
+void LogApplicationStartupInfo(ILogger logger, IWebHostEnvironment environment)
+{
+    logger.LogInformation("=".PadRight(60, '='));
+    logger.LogInformation("🎯 Iniciando Aplicação MieleSystem");
+    logger.LogInformation("   - Ambiente: {Environment}", environment.EnvironmentName);
+    logger.LogInformation("   - Diretório Raiz: {ContentRoot}", environment.ContentRootPath);
+    logger.LogInformation("=".PadRight(60, '='));
+}
+
+/// <summary>
+/// Valida e registra no log as configurações da aplicação para depuração em ambiente de desenvolvimento.
+/// </summary>
+/// <param name="logger">A instância do logger a ser utilizada.</param>
+/// <param name="serviceProvider">O provedor de serviços para resolver as configurações.</param>
+async Task ValidateConfigurationAsync(ILogger logger, IServiceProvider serviceProvider)
+{
+    logger.LogInformation("🔍 Validando configuração da aplicação...");
+    ConfigurationLogger.LogConfigurationVariables(logger, serviceProvider);
+    logger.LogInformation("✅ Validação da configuração concluída com sucesso");
+    await Task.CompletedTask;
+}
+
+/// <summary>
+/// Declaração da classe parcial 'Program'.
+/// Necessária para que as ferramentas de design-time do .NET (como o Entity Framework)
+/// possam identificar este arquivo como o ponto de entrada da aplicação ao usar top-level statements.
+/// </summary>
+public partial class Program { }
