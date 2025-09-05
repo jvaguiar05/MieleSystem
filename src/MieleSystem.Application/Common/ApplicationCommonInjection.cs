@@ -31,9 +31,6 @@ public static class ApplicationCommonInjection
         // AutoMapper (inclui todos os Profiles dos Bounded Contexts)
         services.AddAutoMapper(assembly);
 
-        // MediatR (descobre todos os handlers automaticamente)
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
-
         return services;
     }
 }

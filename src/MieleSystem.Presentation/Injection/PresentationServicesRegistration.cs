@@ -63,6 +63,13 @@ public static class PresentationServicesRegistration
 
         services.AddTokenServices(configuration);
 
+        var assembliesToScan = AppDomain
+            .CurrentDomain.GetAssemblies()
+            .Where(a => a.FullName != null && a.FullName.StartsWith("MieleSystem"))
+            .ToArray();
+
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assembliesToScan));
+
         return services;
     }
 

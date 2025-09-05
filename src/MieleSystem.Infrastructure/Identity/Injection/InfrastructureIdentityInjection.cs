@@ -97,11 +97,6 @@ public static class InfrastructureIdentityInjection
 
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtOptions>>().Value);
 
-        // Handlers de eventos
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(typeof(UserRegisteredEventHandler).Assembly)
-        );
-
         return services;
     }
 }
