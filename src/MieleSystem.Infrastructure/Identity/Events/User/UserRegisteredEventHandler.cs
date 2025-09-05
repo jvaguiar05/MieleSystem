@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MieleSystem.Application.Common.Events;
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Email;
 using MieleSystem.Domain.Identity.Entities;
 using MieleSystem.Domain.Identity.Events.User;
 using MieleSystem.Domain.Identity.Repositories;

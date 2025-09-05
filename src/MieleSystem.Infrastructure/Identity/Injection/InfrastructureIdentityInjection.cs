@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Email;
 using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
 using MieleSystem.Domain.Identity.Services;
