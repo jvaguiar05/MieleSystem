@@ -169,12 +169,46 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
     }
 
     /// <summary>
+    /// Envia um e-mail notificando que a conta foi ativada.
+    /// </summary>
+    /// <param name="to">Endereço de e-mail de destino.</param>
+    /// <param name="userName">Nome de exibição do usuário.</param>
+    /// <param name="ct">Token de cancelamento opcional.</param>
+    /// <returns></returns>
+    public async Task SendAccountActivatedAsync(
+        EmailObject to,
+        string userName,
+        CancellationToken ct = default
+    )
+    {
+        ValidateNotDisposed();
+        _emailValidator.ValidateEmailAddress(to);
+        _emailValidator.ValidateUserName(userName);
+
+        try
+        {
+            _loggingService.LogSendingEmail("AccountActivated", to.Value);
+
+            var subject = "Conta Ativada - MieleSystem";
+            var body = await _templateService.RenderAccountActivatedTemplateAsync(userName);
+
+            await _emailSender.SendAsync(to, subject, body, ct);
+
+            _loggingService.LogEmailSentSuccessfully("AccountActivated", to.Value);
+        }
+        catch (Exception ex)
+        {
+            _loggingService.LogEmailSendFailed("AccountActivated", to.Value, ex);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Valida se o serviço não foi descartado.
     /// </summary>
     private void ValidateNotDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(AccountEmailService));
+        ObjectDisposedException.ThrowIf(_disposed, nameof(AccountEmailService));
     }
 
     /// <summary>

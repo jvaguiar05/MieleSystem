@@ -72,4 +72,23 @@ public sealed class SimpleEmailTemplateRenderer : IEmailTemplateRenderer
                 </html>
             """;
     }
+
+    public string RenderAccountActivated(string userName)
+    {
+        return $"""
+                <html>
+                    <body style="font-family: sans-serif; line-height: 1.5;">
+                        <h2>Conta Ativada</h2>
+                        <p>Olá {userName},</p>
+                        <p>Sua conta no MieleSystem foi ativada com sucesso!</p>
+                        <p>Agora você pode acessar sua conta e explorar todas as funcionalidades do sistema.</p>
+                        <br/>
+                        <p>Se tiver dúvidas ou precisar de ajuda, entre em contato com nosso suporte.</p>
+                        <br/>
+                        <p>Atenciosamente,</p>
+                        <strong>Equipe MieleSystem</strong>
+                    </body>
+                </html>
+            """;
+    }
 }

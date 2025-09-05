@@ -29,4 +29,12 @@ public interface IEmailTemplateService
     /// <returns>Conteúdo HTML do template.</returns>
     /// <exception cref="InvalidOperationException">Quando a renderização falha.</exception>
     Task<string> RenderPasswordChangedTemplateAsync(DateTime changedAtUtc);
+
+    /// <summary>
+    /// Renderiza o template de aviso de conta ativada.
+    /// </summary>
+    /// <param name="userName">Nome do usuário.</param>
+    /// <returns>Conteúdo HTML do template.</returns>
+    /// <exception cref="InvalidOperationException">Quando a renderização falha.</exception>
+    Task<string> RenderAccountActivatedTemplateAsync(string userName);
 }

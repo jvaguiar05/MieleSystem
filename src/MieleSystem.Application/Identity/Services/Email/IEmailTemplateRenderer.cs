@@ -9,4 +9,5 @@ public interface IEmailTemplateRenderer
     string RenderWelcome(string userName);
     string RenderOtp(string code, DateTime expiresAtUtc);
     string RenderPasswordChanged(DateTime changedAtUtc);
+    string RenderAccountActivated(string userName);
 }

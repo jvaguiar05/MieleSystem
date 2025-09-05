@@ -92,4 +92,17 @@ public sealed class EmailTemplateService : IEmailTemplateService
             "PasswordChanged"
         );
     }
+
+    /// <summary>
+    /// Renderiza o template de aviso de conta ativada.
+    /// </summary>
+    /// <param name="userName">Nome do usuário.</param>
+    /// <returns>Conteúdo HTML do template.</returns>
+    public async Task<string> RenderAccountActivatedTemplateAsync(string userName)
+    {
+        return await RenderTemplateAsync(
+            () => _templateRenderer.RenderAccountActivated(userName),
+            "AccountActivated"
+        );
+    }
 }
