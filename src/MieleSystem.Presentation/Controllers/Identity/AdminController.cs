@@ -7,6 +7,7 @@ namespace MieleSystem.Presentation.Controllers.Identity;
 
 [Route("api/[controller]")]
 [ApiController]
+[AllowAnonymous]
 public class AdminController(IHttpContextAccessor httpContextAccessor, IMediator mediator)
     : ControllerBase
 {
@@ -18,7 +19,6 @@ public class AdminController(IHttpContextAccessor httpContextAccessor, IMediator
     /// </summary>
     /// <param name="command">The approval command containing user ID.</param>
     /// <returns>Success result if the user registration was approved.</returns>
-    [AllowAnonymous]
     [HttpPost("approve-user-registration")]
     public async Task<IActionResult> ApproveUserRegistration(
         [FromBody] ApproveUserRegistrationCommand command

@@ -4,6 +4,8 @@ namespace MieleSystem.Infrastructure.Identity.Options;
 
 public sealed class JwtOptions
 {
+    public const string SectionName = "Security:Jwt";
+
     public string Secret { get; set; } = string.Empty;
     public string Issuer { get; set; } = string.Empty;
     public string Audience { get; set; } = string.Empty;

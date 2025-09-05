@@ -61,7 +61,7 @@ public static class PresentationServicesRegistration
         services.AddApplicationCommon();
         services.AddInfrastructureCommon(configuration);
 
-        services.AddTokenServices();
+        services.AddTokenServices(configuration);
 
         return services;
     }
