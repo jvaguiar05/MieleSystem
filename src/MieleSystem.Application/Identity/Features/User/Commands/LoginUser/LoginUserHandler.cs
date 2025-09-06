@@ -20,7 +20,11 @@ public sealed class LoginUserHandler(
     IUnitOfWork unitOfWork
 ) : IRequestHandler<LoginUserCommand, Result<LoginUserResult>>
 {
-    // ... injeções de dependência permanecem as mesmas
+    private readonly IUserRepository _users = users;
+    private readonly IPasswordHasher _passwordHasher = passwordHasher;
+    private readonly ITokenService _tokenService = tokenService;
+    private readonly IRefreshTokenHasher _refreshTokenHasher = refreshTokenHasher;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<Result<LoginUserResult>> Handle(
         LoginUserCommand request,
@@ -29,13 +33,13 @@ public sealed class LoginUserHandler(
     {
         var emailVo = new Email(request.Email);
 
-        var user = await users.GetByEmailAsync(emailVo, ct);
+        var user = await _users.GetByEmailAsync(emailVo, ct);
         if (user == null)
         {
             return Result<LoginUserResult>.Failure("Credenciais inválidas.");
         }
 
-        if (!passwordHasher.Verify(user.PasswordHash.Value, request.Password))
+        if (!_passwordHasher.Verify(user.PasswordHash.Value, request.Password))
         {
             return Result<LoginUserResult>.Failure("Credenciais inválidas.");
         }
@@ -47,30 +51,30 @@ public sealed class LoginUserHandler(
             );
         }
 
-        await unitOfWork.BeginTransactionAsync(ct);
+        await _unitOfWork.BeginTransactionAsync(ct);
 
         try
         {
             user.RevokeAllRefreshTokens();
             user.RemoveInvalidRefreshTokens();
 
-            var accessToken = tokenService.GenerateAccessToken(user);
-            var plainTextRefreshToken = tokenService.GenerateRefreshToken();
-            var refreshTokenHash = refreshTokenHasher.Hash(plainTextRefreshToken);
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var plainTextRefreshToken = _tokenService.GenerateRefreshToken();
+            var refreshTokenHash = _refreshTokenHasher.Hash(plainTextRefreshToken);
             var refreshTokenHashVo = new RefreshTokenHash(refreshTokenHash);
 
             // A validade do token vem da configuração
-            var refreshTokenExpiresAt = tokenService.GetRefreshTokenExpiration();
+            var refreshTokenExpiresAt = _tokenService.GetRefreshTokenExpiration();
             user.AddRefreshToken(refreshTokenHashVo, refreshTokenExpiresAt);
 
-            users.Update(user);
+            _users.Update(user);
 
-            await unitOfWork.CommitTransactionAsync(ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
 
             var resultDto = new LoginResultDto
             {
                 AccessToken = accessToken,
-                ExpiresAt = tokenService.GetAccessTokenExpiration(),
+                ExpiresAt = _tokenService.GetAccessTokenExpiration(),
             };
 
             var finalResult = new LoginUserResult(
@@ -83,7 +87,7 @@ public sealed class LoginUserHandler(
         }
         catch (Exception) // Captura exceções inesperadas do banco ou de lógica
         {
-            await unitOfWork.RollbackTransactionAsync(ct);
+            await _unitOfWork.RollbackTransactionAsync(ct);
             // Logar a exceção aqui é uma boa prática
             return Result<LoginUserResult>.Failure("Ocorreu um erro inesperado durante o login.");
         }
