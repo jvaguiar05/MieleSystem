@@ -1,6 +1,7 @@
 using Microsoft.OpenApi.Models;
 using MieleSystem.Application.Common;
 using MieleSystem.Infrastructure.Common;
+using MieleSystem.Presentation.Middlewares;
 
 namespace MieleSystem.Presentation.Injection;
 
@@ -75,6 +76,8 @@ public static class PresentationServicesRegistration
 
     public static IApplicationBuilder UseAPI(this IApplicationBuilder app)
     {
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {

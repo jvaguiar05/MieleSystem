@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MieleSystem.Application.Identity.Features.User.Commands.LoginUser;
 using MieleSystem.Application.Identity.Features.User.Commands.RegisterUser;
 using MieleSystem.Domain.Identity.Services;
+using MieleSystem.Presentation.Extensions;
 
 namespace MieleSystem.Presentation.Controllers.Identity;
 
@@ -42,18 +43,22 @@ public class AuthController(
         var result = await _mediator.Send(command);
 
         if (!result.IsSuccess)
-            // Retorna 401 Unauthorized com a mensagem de erro fornecida pelo Handler
-            return Unauthorized(result.Error);
+        {
+            // Retorna erro estruturado diretamente do Result
+            return result.ToActionResult();
+        }
 
         // Se o resultado for sucesso, extrai os valores
         var loginData = result.Value;
 
         if (loginData == null || loginData.PlainTextRefreshToken == null)
+        {
             // Retorna 500 Internal Server Error se os dados de login estiverem ausentes
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 "Dados de login inválidos."
             );
+        }
 
         // Configura o cookie seguro para o Refresh Token
         Response.Cookies.Append(
@@ -64,8 +69,7 @@ public class AuthController(
                 HttpOnly = true, // Impede o acesso do JavaScript, protegendo contra XSS
                 Secure = true, // Garante que o cookie seja enviado apenas sobre HTTPS
                 SameSite = SameSiteMode.Strict, // Melhor proteção contra ataques CSRF
-                Expires =
-                    loginData.RefreshTokenExpiresAtUtc // Define a expiração do cookie
+                Expires = loginData.RefreshTokenExpiresAtUtc, // Define a expiração do cookie
             }
         );
 

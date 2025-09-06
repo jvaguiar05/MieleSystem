@@ -36,18 +36,18 @@ public sealed class LoginUserHandler(
         var user = await _users.GetByEmailAsync(emailVo, ct);
         if (user == null)
         {
-            return Result<LoginUserResult>.Failure("Credenciais inválidas.");
+            return Result<LoginUserResult>.Failure(Error.Unauthorized("Credenciais inválidas."));
         }
 
         if (!_passwordHasher.Verify(user.PasswordHash.Value, request.Password))
         {
-            return Result<LoginUserResult>.Failure("Credenciais inválidas.");
+            return Result<LoginUserResult>.Failure(Error.Unauthorized("Credenciais inválidas."));
         }
 
         if (user.RegistrationSituation != UserRegistrationSituation.Accepted)
         {
             return Result<LoginUserResult>.Failure(
-                "Sua conta ainda não foi aprovada por um administrador."
+                Error.Forbidden("Sua conta ainda não foi aprovada por um administrador.")
             );
         }
 
@@ -85,11 +85,17 @@ public sealed class LoginUserHandler(
 
             return Result<LoginUserResult>.Success(finalResult);
         }
-        catch (Exception) // Captura exceções inesperadas do banco ou de lógica
+        catch (Exception ex) // Captura exceções inesperadas do banco ou de lógica
         {
             await _unitOfWork.RollbackTransactionAsync(ct);
             // Logar a exceção aqui é uma boa prática
-            return Result<LoginUserResult>.Failure("Ocorreu um erro inesperado durante o login.");
+            return Result<LoginUserResult>.Failure(
+                Error.Infrastructure(
+                    "login.infrastructure_error",
+                    "Ocorreu um erro inesperado durante o login.",
+                    details: new { originalMessage = ex.Message }
+                )
+            );
         }
     }
 }

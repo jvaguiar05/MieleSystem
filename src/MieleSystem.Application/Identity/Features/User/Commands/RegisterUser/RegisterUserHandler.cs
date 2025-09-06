@@ -31,7 +31,9 @@ public sealed class RegisterUserHandler(
         // Garante unicidade de e-mail
         var exists = await _users.ExistsByEmailAsync(emailVo, ct);
         if (exists)
-            return Result<Guid>.Failure("O e-mail informado já está em uso.");
+            return Result<Guid>.Failure(
+                Error.Conflict("email.already_exists", "O e-mail informado já está em uso.")
+            );
 
         // Gera hash seguro da senha
         var hashStr = _passwordHasher.Hash(request.Password);

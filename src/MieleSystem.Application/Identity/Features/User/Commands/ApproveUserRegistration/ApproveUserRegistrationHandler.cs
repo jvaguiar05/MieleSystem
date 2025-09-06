@@ -24,11 +24,15 @@ public sealed class ApproveUserRegistrationHandler(IUserRepository users, IUnitO
         // Busca o usuário pelo ID público
         var user = await _users.GetByPublicIdAsync(request.UserPublicId, ct);
         if (user is null)
-            return Result<Guid>.Failure("Usuário não encontrado.");
+            return Result<Guid>.Failure(
+                Error.NotFound("user.not_found", "Usuário não encontrado.")
+            );
 
         // Verifica se o usuário está pendente de aprovação
         if (user.RegistrationSituation != Domain.Identity.Enums.UserRegistrationSituation.Pending)
-            return Result<Guid>.Failure("Usuário já foi processado anteriormente.");
+            return Result<Guid>.Failure(
+                Error.Conflict("user.already_processed", "Usuário já foi processado anteriormente.")
+            );
 
         // Aprova o registro do usuário
         user.ApproveRegistration();
