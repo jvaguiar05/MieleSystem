@@ -76,11 +76,12 @@ public static class ConfigurationLogger
     {
         var jwtOptions = serviceProvider.GetRequiredService<IOptions<JwtOptions>>().Value;
         logger.LogInformation(
-            "[Security:Jwt] Issuer: '{Issuer}', Audience: '{Audience}', AccessTokenExpiration: '{AccessTokenExpiration}', Secret: '{Secret}'",
+            "[Security:Jwt] Issuer: '{Issuer}', Audience: '{Audience}', AccessTokenExpiration: '{AccessTokenExpiration}', Secret: '{Secret}', RefreshTokenExpirationInDays: {RefreshTokenExpirationInDays}",
             jwtOptions.Issuer,
             jwtOptions.Audience,
             jwtOptions.AccessTokenExpiration,
-            "[OCULTO POR SEGURANÇA]"
+            "[OCULTO POR SEGURANÇA]",
+            jwtOptions.RefreshTokenExpirationInDays
         );
     }
 

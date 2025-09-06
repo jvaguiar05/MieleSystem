@@ -21,4 +21,16 @@ public interface ITokenService
     /// </summary>
     /// <returns>Token seguro e aleatório para renovação da sessão.</returns>
     string GenerateRefreshToken();
+
+    /// <summary>
+    /// Obtém a data e hora de expiração do token de acesso.
+    /// </summary>
+    /// <returns>Data e hora de expiração do token de acesso.</returns>
+    DateTime GetAccessTokenExpiration();
+
+    /// <summary>
+    /// Obtém a data e hora de expiração do refresh token.
+    /// </summary>
+    /// <returns>Data e hora de expiração do refresh token.</returns>
+    DateTime GetRefreshTokenExpiration();
 }

@@ -12,20 +12,13 @@ namespace MieleSystem.Infrastructure.Identity.Persistence.Stores;
 /// Armazena dados de leitura de usuários.
 /// Utilizado para consultas e operações de leitura.
 /// </summary>
-/// <param name="db"></param>
-/// <param name="mapper"></param>
+/// <param name="db">Contexto do banco de dados</param>
+/// <param name="mapper">Instância do AutoMapper</param>
 public sealed class UserReadStore(MieleDbContext db, IMapper mapper) : IUserReadStore
 {
     private readonly MieleDbContext _db = db;
     private readonly IMapper _mapper = mapper;
 
-    /// <summary>
-    /// Obtém uma lista paginada de usuários.
-    /// Serve para exibir usuários em uma interface de usuário.
-    /// </summary>
-    /// <param name="request"></param>
-    /// <param name="ct"></param>
-    /// <returns>Uma lista paginada de usuários. Se não houver usuários, a lista será vazia.</returns>
     public async Task<PageResultDto<UserListItemDto>> GetPagedAsync(
         PageRequestDto request,
         CancellationToken ct = default

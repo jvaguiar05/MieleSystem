@@ -9,6 +9,12 @@ namespace MieleSystem.Application.Identity.Stores;
 /// </summary>
 public interface IUserReadStore
 {
+    /// <summary>
+    /// Obtém uma página de usuários com base nos critérios de paginação fornecidos.
+    /// </summary>
+    /// <param name="request">Critérios de paginação</param>
+    /// <param name="ct">Token de cancelamento</param>
+    /// <returns>Uma página de usuários</returns>
     Task<PageResultDto<UserListItemDto>> GetPagedAsync(
         PageRequestDto request,
         CancellationToken ct = default

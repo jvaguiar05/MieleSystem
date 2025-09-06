@@ -31,6 +31,7 @@ public static class InfrastructureIdentityInjection
 
         // Read Stores
         services.AddScoped<IUserReadStore, UserReadStore>();
+        services.AddScoped<IRefreshTokenReadStore, RefreshTokenReadStore>();
 
         // Serviços de Hashing (appsettings.json / appsettings.{Environment}.json)
         services
@@ -43,6 +44,7 @@ public static class InfrastructureIdentityInjection
             .ValidateOnStart();
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IRefreshTokenHasher, RefreshTokenHasher>();
 
         // Serviços de geração de tokens
         services.AddScoped<ITokenService, TokenService>();

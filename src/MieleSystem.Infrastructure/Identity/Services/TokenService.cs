@@ -50,4 +50,10 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
         var randomBytes = RandomNumberGenerator.GetBytes(64);
         return Convert.ToBase64String(randomBytes);
     }
+
+    public DateTime GetAccessTokenExpiration() =>
+        DateTime.UtcNow.AddMinutes(_options.AccessTokenExpiration.TotalMinutes);
+
+    public DateTime GetRefreshTokenExpiration() =>
+        DateTime.UtcNow.AddDays(_options.RefreshTokenExpiration.TotalDays);
 }
