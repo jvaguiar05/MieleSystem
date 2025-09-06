@@ -33,8 +33,9 @@ public sealed class MieleDbContextFactory : IDesignTimeDbContextFactory<MieleDbC
                 "Connection string não encontrada. Defina CONNECTION_STRINGS__DEFAULTCONNECTION ou DefaultConnection nos appsettings."
             );
 
-        // (Opcional) Compatibilidade de timestamp do Npgsql, se seu projeto precisar
-        // AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        // Configuração para compatibilidade de timestamp do Npgsql
+        // Permite que DateTime.UtcNow seja salvo em timestamp without time zone
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
         // 4) Monta o DbContextOptions exatamente como em runtime
         var optionsBuilder = new DbContextOptionsBuilder<MieleDbContext>().UseNpgsql(

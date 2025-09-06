@@ -26,6 +26,10 @@ public static class InfrastructureCommonInjection
             Environment.GetEnvironmentVariable("CONNECTION_STRINGS__DEFAULTCONNECTION")
             ?? configuration.GetConnectionString("DefaultConnection");
 
+        // Configuração para compatibilidade de timestamp do Npgsql
+        // Permite que DateTime.UtcNow seja salvo em timestamp without time zone
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         // DbContext compartilhado
         services.AddDbContext<MieleDbContext>(options =>
         {

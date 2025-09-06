@@ -39,6 +39,9 @@ public sealed class MieleDbContext(DbContextOptions<MieleDbContext> options) : D
     {
         base.OnModelCreating(modelBuilder);
 
+        // Configuração global para DateTime UTC -> timestamp without time zone
+        ConfigureDateTimeHandling(modelBuilder);
+
         // Aplica todas as configurações IEntityTypeConfiguration<> disponíveis neste assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MieleDbContext).Assembly);
 
@@ -55,6 +58,23 @@ public sealed class MieleDbContext(DbContextOptions<MieleDbContext> options) : D
     // =======================
     // Helpers
     // =======================
+
+    private static void ConfigureDateTimeHandling(ModelBuilder modelBuilder)
+    {
+        // Configura todas as propriedades DateTime para usar timestamp without time zone
+        // e garante que DateTime.UtcNow seja tratado corretamente
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    // Força o tipo de coluna para timestamp without time zone
+                    property.SetColumnType("timestamp without time zone");
+                }
+            }
+        }
+    }
 
     private static void HandleSoftDeleteChangeTracker(ChangeTracker changeTracker)
     {
