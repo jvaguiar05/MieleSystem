@@ -1,4 +1,5 @@
 using MediatR;
+using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Domain.Identity.Enums;
@@ -21,25 +22,44 @@ public sealed class ApproveUserRegistrationHandler(IUserRepository users, IUnitO
         CancellationToken ct
     )
     {
-        // Busca o usuário pelo ID público
-        var user = await _users.GetByPublicIdAsync(request.UserPublicId, ct);
-        if (user is null)
+        try
+        {
+            // Busca o usuário pelo ID público
+            var user = await _users.GetByPublicIdAsync(request.UserPublicId, ct);
+            if (user is null)
+                return Result<Guid>.Failure(
+                    Error.NotFound("user.not_found", "Usuário não encontrado.")
+                );
+
+            // Verifica se o usuário está pendente de aprovação
+            if (
+                user.RegistrationSituation
+                != Domain.Identity.Enums.UserRegistrationSituation.Pending
+            )
+                return Result<Guid>.Failure(
+                    Error.Conflict(
+                        "user.already_processed",
+                        "Usuário já foi processado anteriormente."
+                    )
+                );
+
+            // Aprova o registro do usuário
+            user.ApproveRegistration();
+
+            // Salva as alterações
+            await _uow.SaveChangesAsync(ct);
+
+            return Result<Guid>.Success(user.PublicId);
+        }
+        catch (Exception ex)
+        {
             return Result<Guid>.Failure(
-                Error.NotFound("user.not_found", "Usuário não encontrado.")
+                Error.Infrastructure(
+                    "approve.infrastructure_error",
+                    "Ocorreu um erro inesperado durante a aprovação.",
+                    details: ex.CreateExceptionDetails("ApproveUserRegistration")
+                )
             );
-
-        // Verifica se o usuário está pendente de aprovação
-        if (user.RegistrationSituation != Domain.Identity.Enums.UserRegistrationSituation.Pending)
-            return Result<Guid>.Failure(
-                Error.Conflict("user.already_processed", "Usuário já foi processado anteriormente.")
-            );
-
-        // Aprova o registro do usuário
-        user.ApproveRegistration();
-
-        // Salva as alterações
-        await _uow.SaveChangesAsync(ct);
-
-        return Result<Guid>.Success(user.PublicId);
+        }
     }
 }

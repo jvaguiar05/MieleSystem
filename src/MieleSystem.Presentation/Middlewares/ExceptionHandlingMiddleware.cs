@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Domain.Common.Exceptions;
 
@@ -83,9 +84,14 @@ public sealed class ExceptionHandlingMiddleware(
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error {CorrelationId}", correlationId);
+
             await WriteProblem(
                 context,
-                Error.Unexpected("Ocorreu um erro inesperado.", correlationId)
+                Error.Unexpected(
+                    "Ocorreu um erro inesperado.",
+                    correlationId,
+                    details: ex.CreateExceptionDetails("GlobalExceptionHandler")
+                )
             );
         }
     }

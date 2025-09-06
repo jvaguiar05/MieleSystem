@@ -1,4 +1,5 @@
 using MediatR;
+using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Domain.Identity.Enums;
@@ -25,44 +26,57 @@ public sealed class RegisterUserHandler(
 
     public async Task<Result<Guid>> Handle(RegisterUserCommand request, CancellationToken ct)
     {
-        // Normaliza e valida VOs básicos
-        var emailVo = new Email(request.Email);
+        try
+        {
+            // Normaliza e valida VOs básicos
+            var emailVo = new Email(request.Email);
 
-        // Garante unicidade de e-mail
-        var exists = await _users.ExistsByEmailAsync(emailVo, ct);
-        if (exists)
-            return Result<Guid>.Failure(
-                Error.Conflict("email.already_exists", "O e-mail informado já está em uso.")
+            // Garante unicidade de e-mail
+            var exists = await _users.ExistsByEmailAsync(emailVo, ct);
+            if (exists)
+                return Result<Guid>.Failure(
+                    Error.Conflict("email.already_exists", "O e-mail informado já está em uso.")
+                );
+
+            // Gera hash seguro da senha
+            var hashStr = _passwordHasher.Hash(request.Password);
+            var passwordVo = new PasswordHash(hashStr);
+
+            // Define Role (padrão Editor)
+            var role = ResolveRoleOrDefault(request.Role);
+
+            // Cria agregado e adiciona ao repositório
+            var user = Domain.Identity.Entities.User.Register(
+                name: request.Name,
+                email: emailVo,
+                passwordHash: passwordVo,
+                role: role
             );
 
-        // Gera hash seguro da senha
-        var hashStr = _passwordHasher.Hash(request.Password);
-        var passwordVo = new PasswordHash(hashStr);
+            await _users.AddAsync(user, ct);
 
-        // Define Role (padrão Editor)
-        var role = ResolveRoleOrDefault(request.Role);
+            // Persiste para garantir que o Id seja gerado
+            await _uow.SaveChangesAsync(ct);
 
-        // Cria agregado e adiciona ao repositório
-        var user = Domain.Identity.Entities.User.Register(
-            name: request.Name,
-            email: emailVo,
-            passwordHash: passwordVo,
-            role: role
-        );
+            // Lança UserRegisteredEvent com int UserId real
+            user.MarkAsRegistered();
 
-        await _users.AddAsync(user, ct);
+            // Dispara eventos via UoW (publica o UserRegisteredEvent)
+            await _uow.SaveChangesAsync(ct);
 
-        // Persiste para garantir que o Id seja gerado
-        await _uow.SaveChangesAsync(ct);
-
-        // Lança UserRegisteredEvent com int UserId real
-        user.MarkAsRegistered();
-
-        // Dispara eventos via UoW (publica o UserRegisteredEvent)
-        await _uow.SaveChangesAsync(ct);
-
-        // Retorna apenas o PublicId
-        return Result<Guid>.Success(user.PublicId);
+            // Retorna apenas o PublicId
+            return Result<Guid>.Success(user.PublicId);
+        }
+        catch (Exception ex)
+        {
+            return Result<Guid>.Failure(
+                Error.Infrastructure(
+                    "register.infrastructure_error",
+                    "Ocorreu um erro inesperado durante o registro.",
+                    details: ex.CreateExceptionDetails("RegisterUser")
+                )
+            );
+        }
     }
 
     /// <summary>

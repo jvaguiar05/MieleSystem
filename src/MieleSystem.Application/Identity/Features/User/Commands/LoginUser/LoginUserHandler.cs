@@ -1,4 +1,5 @@
 using MediatR;
+using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Application.Identity.DTOs;
 using MieleSystem.Domain.Common.Interfaces;
@@ -88,12 +89,12 @@ public sealed class LoginUserHandler(
         catch (Exception ex) // Captura exceções inesperadas do banco ou de lógica
         {
             await _unitOfWork.RollbackTransactionAsync(ct);
-            // Logar a exceção aqui é uma boa prática
+
             return Result<LoginUserResult>.Failure(
                 Error.Infrastructure(
                     "login.infrastructure_error",
                     "Ocorreu um erro inesperado durante o login.",
-                    details: new { originalMessage = ex.Message }
+                    details: ex.CreateExceptionDetails("LoginUser")
                 )
             );
         }

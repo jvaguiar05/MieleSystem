@@ -52,4 +52,30 @@ public static class ResultExtensions
             ? new { success = true }
             : new { success = false, error = result.Errors.First() };
     }
+
+    /// <summary>
+    /// Cria detalhes estruturados de uma exceção para debugging
+    /// </summary>
+    public static object CreateExceptionDetails(this Exception ex, string operation = "Unknown")
+    {
+        return new
+        {
+            message = ex.Message,
+            type = ex.GetType().FullName,
+            stackTrace = ex.StackTrace,
+            innerException = ex.InnerException != null
+                ? new
+                {
+                    message = ex.InnerException.Message,
+                    type = ex.InnerException.GetType().FullName,
+                    stackTrace = ex.InnerException.StackTrace,
+                }
+                : null,
+            source = ex.Source,
+            targetSite = ex.TargetSite?.ToString(),
+            data = ex.Data.Count > 0 ? ex.Data : null,
+            timestamp = DateTime.UtcNow,
+            operation = operation,
+        };
+    }
 }
