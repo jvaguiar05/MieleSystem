@@ -10,7 +10,7 @@ namespace MieleSystem.Domain.Identity.Entities;
 /// </summary>
 public sealed class RefreshToken : Entity
 {
-    public Token Token { get; private set; } = null!;
+    public RefreshTokenHash TokenHash { get; private set; } = null!;
     public DateTime ExpiresAtUtc { get; private set; }
     public bool IsRevoked { get; private set; }
     public DateTime? RevokedAtUtc { get; private set; }
@@ -31,12 +31,17 @@ public sealed class RefreshToken : Entity
     /// <param name="token">Valor opaco do refresh token.</param>
     /// <param name="expiresAtUtc">Expiração em UTC (deve ser futura).</param>
     /// <param name="publicId">Opcional para reidratação/teste. Se vazio, é gerado.</param>
-    internal RefreshToken(User owner, Token token, DateTime expiresAtUtc, Guid? publicId = null)
+    internal RefreshToken(
+        User owner,
+        RefreshTokenHash tokenHash,
+        DateTime expiresAtUtc,
+        Guid? publicId = null
+    )
         : base(publicId ?? Guid.Empty)
     {
         if (owner is null)
             throw new DomainException("Usuário do refresh token é obrigatório.");
-        if (token is null)
+        if (tokenHash is null)
             throw new DomainException("Token inválido.");
         if (expiresAtUtc <= DateTime.UtcNow)
             throw new DomainException("Expiração do refresh token deve ser futura.");
@@ -44,7 +49,7 @@ public sealed class RefreshToken : Entity
         User = owner;
         UserId = owner.Id;
 
-        Token = token;
+        TokenHash = tokenHash;
         ExpiresAtUtc = expiresAtUtc;
         IsRevoked = false;
         RevokedAtUtc = null;

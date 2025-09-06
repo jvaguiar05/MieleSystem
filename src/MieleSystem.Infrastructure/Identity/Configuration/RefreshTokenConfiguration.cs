@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MieleSystem.Domain.Identity.Entities;
-using MieleSystem.Domain.Identity.ValueObjects;
 
 namespace MieleSystem.Infrastructure.Identity.Configuration;
 
@@ -30,13 +29,13 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.Property(x => x.RevokedAtUtc).HasColumnType("timestamp without time zone");
 
         // ---------------------------
-        // Value Object: Token
+        // Value Object: RefreshTokenHash
         // ---------------------------
         builder.OwnsOne(
-            x => x.Token,
-            token =>
+            x => x.TokenHash,
+            tokenHash =>
             {
-                token
+                tokenHash
                     .Property(t => t.Value)
                     .HasColumnName("TokenValue")
                     .HasMaxLength(255)

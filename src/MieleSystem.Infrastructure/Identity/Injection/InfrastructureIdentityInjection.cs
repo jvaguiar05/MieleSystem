@@ -97,6 +97,9 @@ public static class InfrastructureIdentityInjection
 
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtOptions>>().Value);
 
+        // Serviços de hashing de refresh tokens
+        services.AddScoped<IRefreshTokenHasher, RefreshTokenHasher>();
+
         return services;
     }
 }

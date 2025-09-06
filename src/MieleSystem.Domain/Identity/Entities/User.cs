@@ -129,25 +129,25 @@ public sealed class User : AggregateRoot, ISoftDeletable
     // -----------------------------
     // Refresh Tokens lifecycle (owned by aggregate)
     // -----------------------------
-    public RefreshToken AddRefreshToken(Token token, DateTime expiresAtUtc)
+    public RefreshToken AddRefreshToken(RefreshTokenHash tokenHash, DateTime expiresAtUtc)
     {
         EnsureNotDeleted();
 
-        if (token is null)
+        if (tokenHash is null)
             throw new DomainException("Token inválido.");
         if (expiresAtUtc <= DateTime.UtcNow)
             throw new DomainException("Expiração do refresh token deve ser futura.");
 
-        var refreshToken = new RefreshToken(this, token, expiresAtUtc, null);
+        var refreshToken = new RefreshToken(this, tokenHash, expiresAtUtc, null);
         _refreshTokens.Add(refreshToken);
         return refreshToken;
     }
 
-    public bool RevokeRefreshToken(Token token)
+    public bool RevokeRefreshToken(RefreshTokenHash tokenHash)
     {
         EnsureNotDeleted();
 
-        var rt = _refreshTokens.FirstOrDefault(x => x.Token == token);
+        var rt = _refreshTokens.FirstOrDefault(x => x.TokenHash == tokenHash && x.IsActive());
         if (rt is null)
             return false;
 
