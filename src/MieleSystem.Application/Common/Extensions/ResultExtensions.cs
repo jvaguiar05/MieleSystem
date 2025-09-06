@@ -54,7 +54,7 @@ public static class ResultExtensions
     }
 
     /// <summary>
-    /// Cria detalhes estruturados de uma exceção para debugging
+    /// Cria detalhes estruturados de uma exceção para debugging (sem stackTrace)
     /// </summary>
     public static object CreateExceptionDetails(this Exception ex, string operation = "Unknown")
     {
@@ -62,13 +62,11 @@ public static class ResultExtensions
         {
             message = ex.Message,
             type = ex.GetType().FullName,
-            stackTrace = ex.StackTrace,
             innerException = ex.InnerException != null
                 ? new
                 {
                     message = ex.InnerException.Message,
                     type = ex.InnerException.GetType().FullName,
-                    stackTrace = ex.InnerException.StackTrace,
                 }
                 : null,
             source = ex.Source,

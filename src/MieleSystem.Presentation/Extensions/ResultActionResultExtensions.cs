@@ -3,6 +3,23 @@ using MieleSystem.Application.Common.Responses;
 
 namespace MieleSystem.Presentation.Extensions;
 
+public class ErrorResponse
+{
+    public bool Success { get; set; }
+    public ErrorInfo Error { get; set; } = null!;
+}
+
+public class ErrorInfo
+{
+    public string Code { get; set; } = null!;
+    public string Message { get; set; } = null!;
+    public string Type { get; set; } = null!;
+    public int HttpStatus { get; set; }
+    public string? CorrelationId { get; set; }
+    public IReadOnlyDictionary<string, object?>? Metadata { get; set; }
+    public object? InnerException { get; set; }
+}
+
 public static class ResultActionResultExtensions
 {
     /// <summary>
@@ -35,24 +52,38 @@ public static class ResultActionResultExtensions
             ? new OkObjectResult(result.Value)
             : CreateErrorResponse(result.Errors.First());
 
-    private static IActionResult CreateErrorResponse(Error error) =>
-        new ObjectResult(
-            new
-            {
-                success = false,
-                error = new
-                {
-                    code = error.Code,
-                    message = error.Message,
-                    type = error.Type.ToString(),
-                    httpStatus = error.HttpStatus,
-                    correlationId = error.CorrelationId,
-                    details = error.Details,
-                    metadata = error.Metadata,
-                },
-            }
-        )
+    private static IActionResult CreateErrorResponse(Error error)
+    {
+        var errorResponse = new ErrorResponse
         {
-            StatusCode = error.HttpStatus,
+            Success = false,
+            Error = new ErrorInfo
+            {
+                Code = error.Code,
+                Message = error.Message,
+                Type = error.Type.ToString(),
+                HttpStatus = error.HttpStatus,
+                CorrelationId = error.CorrelationId,
+                Metadata = error.Metadata,
+            },
         };
+
+        // Se há detalhes de exceção, inclui innerException diretamente
+        if (error.Details is not null)
+        {
+            // Usa reflexão para acessar innerException se existir
+            var detailsType = error.Details.GetType();
+            var innerExceptionProperty = detailsType.GetProperty("innerException");
+            if (innerExceptionProperty != null)
+            {
+                var innerException = innerExceptionProperty.GetValue(error.Details);
+                if (innerException != null)
+                {
+                    errorResponse.Error.InnerException = innerException;
+                }
+            }
+        }
+
+        return new ObjectResult(errorResponse) { StatusCode = error.HttpStatus };
+    }
 }

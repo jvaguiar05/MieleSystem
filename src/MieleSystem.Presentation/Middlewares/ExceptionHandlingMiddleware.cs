@@ -85,12 +85,14 @@ public sealed class ExceptionHandlingMiddleware(
         {
             logger.LogError(ex, "Unexpected error {CorrelationId}", correlationId);
 
+            var exceptionDetails = ex.CreateExceptionDetails("GlobalExceptionHandler");
+
             await WriteProblem(
                 context,
                 Error.Unexpected(
                     "Ocorreu um erro inesperado.",
                     correlationId,
-                    details: ex.CreateExceptionDetails("GlobalExceptionHandler")
+                    details: exceptionDetails
                 )
             );
         }
@@ -109,8 +111,23 @@ public sealed class ExceptionHandlingMiddleware(
 
         problem.Extensions["code"] = error.Code;
         problem.Extensions["correlationId"] = error.CorrelationId ?? string.Empty;
+
+        // Se há detalhes de exceção, inclui innerException diretamente
         if (error.Details is not null)
-            problem.Extensions["details"] = error.Details;
+        {
+            // Usa reflexão para acessar innerException se existir
+            var detailsType = error.Details.GetType();
+            var innerExceptionProperty = detailsType.GetProperty("innerException");
+            if (innerExceptionProperty != null)
+            {
+                var innerException = innerExceptionProperty.GetValue(error.Details);
+                if (innerException != null)
+                {
+                    problem.Extensions["innerException"] = innerException;
+                }
+            }
+        }
+
         if (error.Metadata is not null)
             problem.Extensions["meta"] = error.Metadata;
 
