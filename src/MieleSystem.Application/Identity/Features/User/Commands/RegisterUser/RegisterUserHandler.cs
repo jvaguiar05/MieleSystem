@@ -26,35 +26,37 @@ public sealed class RegisterUserHandler(
 
     public async Task<Result<Guid>> Handle(RegisterUserCommand request, CancellationToken ct)
     {
-        try
-        {
-            // Normaliza e valida VOs básicos
-            var emailVo = new Email(request.Email);
+        // Normaliza e valida VOs básicos
+        var emailVo = new Email(request.Email);
 
-            // Garante unicidade de e-mail
-            var exists = await _users.ExistsByEmailAsync(emailVo, ct);
-            if (exists)
-                return Result<Guid>.Failure(
-                    Error.Conflict("email.already_exists", "O e-mail informado já está em uso.")
-                );
-
-            // Gera hash seguro da senha
-            var hashStr = _passwordHasher.Hash(request.Password);
-            var passwordVo = new PasswordHash(hashStr);
-
-            // Define Role (padrão Editor)
-            var role = ResolveRoleOrDefault(request.Role);
-
-            // Cria agregado e adiciona ao repositório
-            var user = Domain.Identity.Entities.User.Register(
-                name: request.Name,
-                email: emailVo,
-                passwordHash: passwordVo,
-                role: role
+        // Garante unicidade de e-mail
+        var exists = await _users.ExistsByEmailAsync(emailVo, ct);
+        if (exists)
+            return Result<Guid>.Failure(
+                Error.Conflict("email.already_exists", "O e-mail informado já está em uso.")
             );
 
-            await _users.AddAsync(user, ct);
+        // Gera hash seguro da senha
+        var hashStr = _passwordHasher.Hash(request.Password);
+        var passwordVo = new PasswordHash(hashStr);
 
+        // Define Role (padrão Editor)
+        var role = ResolveRoleOrDefault(request.Role);
+
+        // Cria agregado e adiciona ao repositório
+        var user = Domain.Identity.Entities.User.Register(
+            name: request.Name,
+            email: emailVo,
+            passwordHash: passwordVo,
+            role: role
+        );
+
+        await _users.AddAsync(user, ct);
+
+        await _uow.BeginTransactionAsync(ct);
+
+        try
+        {
             // Persiste para garantir que o Id seja gerado
             await _uow.SaveChangesAsync(ct);
 
@@ -64,11 +66,15 @@ public sealed class RegisterUserHandler(
             // Dispara eventos via UoW (publica o UserRegisteredEvent)
             await _uow.SaveChangesAsync(ct);
 
+            await _uow.CommitTransactionAsync(ct);
+
             // Retorna apenas o PublicId
             return Result<Guid>.Success(user.PublicId);
         }
         catch (Exception ex)
         {
+            await _uow.RollbackTransactionAsync(ct);
+
             return Result<Guid>.Failure(
                 Error.Infrastructure(
                     "register.infrastructure_error",

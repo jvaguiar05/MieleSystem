@@ -22,37 +22,37 @@ public sealed class ApproveUserRegistrationHandler(IUserRepository users, IUnitO
         CancellationToken ct
     )
     {
+        // Busca o usuário pelo ID público
+        var user = await _users.GetByPublicIdAsync(request.UserPublicId, ct);
+        if (user is null)
+            return Result<Guid>.Failure(
+                Error.NotFound("user.not_found", "Usuário não encontrado.")
+            );
+
+        // Verifica se o usuário está pendente de aprovação
+        if (user.RegistrationSituation != Domain.Identity.Enums.UserRegistrationSituation.Pending)
+            return Result<Guid>.Failure(
+                Error.Conflict("user.already_processed", "Usuário já foi processado anteriormente.")
+            );
+
+        // Aprova o registro do usuário
+        user.ApproveRegistration();
+
+        await _uow.BeginTransactionAsync(ct);
+
         try
         {
-            // Busca o usuário pelo ID público
-            var user = await _users.GetByPublicIdAsync(request.UserPublicId, ct);
-            if (user is null)
-                return Result<Guid>.Failure(
-                    Error.NotFound("user.not_found", "Usuário não encontrado.")
-                );
-
-            // Verifica se o usuário está pendente de aprovação
-            if (
-                user.RegistrationSituation
-                != Domain.Identity.Enums.UserRegistrationSituation.Pending
-            )
-                return Result<Guid>.Failure(
-                    Error.Conflict(
-                        "user.already_processed",
-                        "Usuário já foi processado anteriormente."
-                    )
-                );
-
-            // Aprova o registro do usuário
-            user.ApproveRegistration();
-
             // Salva as alterações
             await _uow.SaveChangesAsync(ct);
+
+            await _uow.CommitTransactionAsync(ct);
 
             return Result<Guid>.Success(user.PublicId);
         }
         catch (Exception ex)
         {
+            await _uow.RollbackTransactionAsync(ct);
+
             return Result<Guid>.Failure(
                 Error.Infrastructure(
                     "approve.infrastructure_error",
