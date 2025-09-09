@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MieleSystem.Application.Identity.Services;
 using MieleSystem.Application.Identity.Services.Email;
 using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
@@ -32,6 +33,7 @@ public static class InfrastructureIdentityInjection
         // Read Stores
         services.AddScoped<IUserReadStore, UserReadStore>();
         services.AddScoped<IRefreshTokenReadStore, RefreshTokenReadStore>();
+        services.AddScoped<IUserConnectionLogReadStore, UserConnectionLogReadStore>();
 
         // Serviços de Hashing (appsettings.json / appsettings.{Environment}.json)
         services
@@ -60,6 +62,12 @@ public static class InfrastructureIdentityInjection
             .ValidateOnStart();
 
         services.AddScoped<IOtpService, OtpService>();
+
+        // Authentication context service
+        services.AddScoped<IAuthenticationContextService, AuthenticationContextService>();
+
+        // HTTP Context service for authentication
+        services.AddScoped<IHttpContextAuthenticationService, HttpContextAuthenticationService>();
 
         // Serviços de envio de e-mail
         services

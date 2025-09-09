@@ -11,7 +11,6 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.ToTable("RefreshTokens");
 
         builder.HasKey(x => x.Id);
-
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 
         builder.HasIndex(x => x.PublicId).IsUnique();
@@ -43,9 +42,13 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             }
         );
 
+        // Índices para performance
+        builder
+            .HasIndex(x => new { x.UserId, x.CreatedAtUtc })
+            .HasDatabaseName("IX_RefreshTokens_UserId_CreatedAtUtc");
+
         // FK para User (privada)
         builder.Property<int>("UserId").IsRequired();
-
         builder.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade);
     }
 }
