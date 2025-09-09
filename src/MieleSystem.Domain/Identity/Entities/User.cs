@@ -32,6 +32,9 @@ public sealed class User : AggregateRoot, ISoftDeletable
     private readonly List<OtpSession> _otpSessions = new();
     public IReadOnlyCollection<OtpSession> OtpSessions => _otpSessions.AsReadOnly();
 
+    private readonly List<UserConnectionLog> _connectionLogs = new();
+    public IReadOnlyCollection<UserConnectionLog> ConnectionLogs => _connectionLogs.AsReadOnly();
+
     // -----------------------------
     // Soft delete
     // -----------------------------
@@ -41,6 +44,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     // -----------------------------
     // Ctors / factories
     // -----------------------------
+
     // EF
     private User()
         : base(Guid.Empty) { }
@@ -212,6 +216,86 @@ public sealed class User : AggregateRoot, ISoftDeletable
     }
 
     // -----------------------------
+    // Ciclo de vida dos logs de conexão (owned by aggregate)
+    // -----------------------------
+    public UserConnectionLog AddConnectionLog(
+        string ipAddress,
+        string userAgent,
+        string? deviceId = null,
+        string? location = null,
+        string? additionalInfo = null
+    )
+    {
+        EnsureNotDeleted();
+
+        var connectionLog = new UserConnectionLog(
+            this,
+            ipAddress,
+            userAgent,
+            deviceId,
+            location,
+            additionalInfo
+        );
+
+        _connectionLogs.Add(connectionLog);
+        return connectionLog;
+    }
+
+    /// <summary>
+    /// Obtém os logs de conexão dos últimos N dias.
+    /// </summary>
+    public IEnumerable<UserConnectionLog> GetRecentConnectionLogs(int days = 30)
+    {
+        var cutoffDate = DateTime.UtcNow.AddDays(-days);
+        return _connectionLogs
+            .Where(log => log.ConnectedAtUtc >= cutoffDate)
+            .OrderByDescending(log => log.ConnectedAtUtc);
+    }
+
+    /// <summary>
+    /// Verifica se o IP é conhecido baseado em conexões anteriores bem-sucedidas.
+    /// </summary>
+    public bool IsKnownIpAddress(string ipAddress, int days = 30)
+    {
+        var recentLogs = GetRecentConnectionLogs(days);
+        return recentLogs.Any(log => log.IpAddress == ipAddress && log.IsSuccessful);
+    }
+
+    /// <summary>
+    /// Verifica se há atividade suspeita baseada nos logs de conexão.
+    /// </summary>
+    public bool HasSuspiciousActivity(string currentIpAddress)
+    {
+        var recentLogs = GetRecentConnectionLogs(1); // Últimas 24 horas
+
+        // Muitas tentativas falhadas
+        var failedAttempts = recentLogs.Count(log => !log.IsSuccessful);
+        if (failedAttempts >= 5)
+            return true;
+
+        // IP desconhecido
+        if (!IsKnownIpAddress(currentIpAddress))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Remove logs de conexão antigos para manter performance.
+    /// </summary>
+    public int CleanupOldConnectionLogs(int keepDays = 90)
+    {
+        EnsureNotDeleted();
+
+        var cutoffDate = DateTime.UtcNow.AddDays(-keepDays);
+        var before = _connectionLogs.Count;
+
+        _connectionLogs.RemoveAll(log => log.ConnectedAtUtc < cutoffDate);
+
+        return before - _connectionLogs.Count;
+    }
+
+    // -----------------------------
     // Soft delete
     // -----------------------------
     public void Delete()
@@ -235,7 +319,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     }
 
     // -----------------------------
-    // Registration workflow
+    // Registro de usuário (admin approval)
     // -----------------------------
     public void ApproveRegistration()
     {
