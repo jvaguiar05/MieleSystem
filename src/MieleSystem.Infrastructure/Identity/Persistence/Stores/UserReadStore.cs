@@ -12,8 +12,6 @@ namespace MieleSystem.Infrastructure.Identity.Persistence.Stores;
 /// Armazena dados de leitura de usuários.
 /// Utilizado para consultas e operações de leitura.
 /// </summary>
-/// <param name="db">Contexto do banco de dados</param>
-/// <param name="mapper">Instância do AutoMapper</param>
 public sealed class UserReadStore(MieleDbContext db, IMapper mapper) : IUserReadStore
 {
     private readonly MieleDbContext _db = db;

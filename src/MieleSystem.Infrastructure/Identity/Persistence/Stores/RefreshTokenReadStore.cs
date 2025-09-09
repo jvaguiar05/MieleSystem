@@ -30,7 +30,7 @@ public sealed class RefreshTokenReadStore(MieleDbContext db, IMapper mapper)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<List<RefreshTokenDto>> GetActiveTokensByUserIdAsync(
+    public async Task<IEnumerable<RefreshTokenDto>> GetActiveTokensByUserIdAsync(
         int userId,
         CancellationToken cancellationToken = default
     )
