@@ -77,6 +77,7 @@ public static class PresentationServicesRegistration
     public static IApplicationBuilder UseAPI(this IApplicationBuilder app)
     {
         app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseMiddleware<AuthenticationContextMiddleware>();
 
         app.UseSwagger();
         app.UseSwaggerUI(options =>

@@ -74,6 +74,20 @@ public sealed record Error(
             correlationId
         );
 
+    public static Error OtpRequired(
+        string message,
+        string? correlationId = null,
+        object? details = null
+    ) =>
+        new(
+            "auth.otp_required",
+            message,
+            ErrorType.Validation,
+            StatusCodes.Status428PreconditionRequired,
+            correlationId,
+            details
+        );
+
     public static Error Conflict(string code, string message, string? correlationId = null) =>
         new(code, message, ErrorType.Conflict, StatusCodes.Status409Conflict, correlationId);
 

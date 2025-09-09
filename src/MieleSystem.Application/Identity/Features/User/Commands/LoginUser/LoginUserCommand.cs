@@ -21,4 +21,7 @@ public sealed class LoginUserCommand : IRequest<Result<LoginUserResult>>
 {
     public string Email { get; init; } = null!;
     public string Password { get; init; } = null!;
+    public string? ClientIp { get; init; }
+    public string? UserAgent { get; init; }
+    public string? DeviceId { get; init; }
 }
