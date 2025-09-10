@@ -1,6 +1,6 @@
 using Microsoft.OpenApi.Models;
-using MieleSystem.Application.Common;
-using MieleSystem.Infrastructure.Common;
+using MieleSystem.Application.Common.Injection;
+using MieleSystem.Infrastructure.Common.Injection;
 using MieleSystem.Presentation.Middlewares;
 
 namespace MieleSystem.Presentation.Injection;

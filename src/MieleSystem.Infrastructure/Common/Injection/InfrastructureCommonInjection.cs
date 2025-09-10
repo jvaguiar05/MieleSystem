@@ -7,7 +7,7 @@ using MieleSystem.Infrastructure.Common.Persistence;
 using MieleSystem.Infrastructure.Common.Services;
 using MieleSystem.Infrastructure.Identity.Injection;
 
-namespace MieleSystem.Infrastructure.Common;
+namespace MieleSystem.Infrastructure.Common.Injection;
 
 /// <summary>
 /// Injeção de dependências para Infrastructure/Common.
