@@ -47,8 +47,10 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
 
     public string GenerateRefreshToken()
     {
-        var randomBytes = RandomNumberGenerator.GetBytes(64);
-        return Convert.ToBase64String(randomBytes);
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
 
     public DateTime GetAccessTokenExpiration() =>
