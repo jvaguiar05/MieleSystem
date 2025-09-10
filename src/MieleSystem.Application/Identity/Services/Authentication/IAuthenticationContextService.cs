@@ -1,6 +1,6 @@
 using MieleSystem.Domain.Identity.Entities;
 
-namespace MieleSystem.Application.Identity.Services;
+namespace MieleSystem.Application.Identity.Services.Authentication;
 
 /// <summary>
 /// Service to determine authentication context and OTP requirements based on various factors.

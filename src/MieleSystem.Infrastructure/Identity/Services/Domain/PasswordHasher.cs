@@ -2,7 +2,7 @@ using Microsoft.Extensions.Options;
 using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Domain;
 
 /// <summary>
 /// Implementação concreta do serviço de hash de senhas utilizando BCrypt.

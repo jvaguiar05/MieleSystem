@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Authentication;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Authentication;
 
 /// <summary>
 /// Serviço para extrair informações de contexto de autenticação a partir do HttpContext.

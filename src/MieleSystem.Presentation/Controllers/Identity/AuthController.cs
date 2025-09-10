@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MieleSystem.Application.Identity.Features.User.Commands.LoginUser;
 using MieleSystem.Application.Identity.Features.User.Commands.RegisterUser;
 using MieleSystem.Application.Identity.Features.User.Commands.VerifyLoginOtp;
-using MieleSystem.Application.Identity.Services;
-using MieleSystem.Domain.Identity.Services;
+using MieleSystem.Application.Identity.Services.Authentication;
 using MieleSystem.Presentation.Extensions;
 
 namespace MieleSystem.Presentation.Controllers.Identity;

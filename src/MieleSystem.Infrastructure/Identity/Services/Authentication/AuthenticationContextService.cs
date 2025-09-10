@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Authentication;
 using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Entities;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Authentication;
 
 /// <summary>
 /// Implementação do serviço para determinar o contexto de autenticação e requisitos de OTP.
@@ -13,10 +13,8 @@ public sealed class AuthenticationContextService(
     IUserConnectionLogReadStore connectionLogStore
 ) : IAuthenticationContextService
 {
-    private readonly ILogger<AuthenticationContextService> _logger =
-        logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly IUserConnectionLogReadStore _connectionLogStore =
-        connectionLogStore ?? throw new ArgumentNullException(nameof(connectionLogStore));
+    private readonly ILogger<AuthenticationContextService> _logger = logger;
+    private readonly IUserConnectionLogReadStore _connectionLogStore = connectionLogStore;
 
     public async Task<bool> IsOtpRequiredAsync(
         User user,

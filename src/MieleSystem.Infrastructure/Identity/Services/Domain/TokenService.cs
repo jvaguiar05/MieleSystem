@@ -8,7 +8,7 @@ using MieleSystem.Domain.Identity.Entities;
 using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Domain;
 
 /// <summary>
 /// Implementação do serviço de geração de tokens JWT e refresh tokens.

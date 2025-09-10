@@ -1,4 +1,4 @@
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Authentication;
 
 namespace MieleSystem.Presentation.Middlewares;
 

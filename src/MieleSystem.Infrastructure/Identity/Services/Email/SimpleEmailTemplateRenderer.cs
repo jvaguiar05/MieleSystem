@@ -1,7 +1,7 @@
 using System.Globalization;
 using MieleSystem.Application.Identity.Services.Email;
 
-namespace MieleSystem.Infrastructure.Identity.Email;
+namespace MieleSystem.Infrastructure.Identity.Services.Email;
 
 /// <summary>
 /// Responsável por gerar conteúdo HTML simples para e-mails transacionais do sistema.

@@ -2,7 +2,7 @@ using MediatR;
 using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Application.Identity.DTOs;
-using MieleSystem.Application.Identity.Services;
+using MieleSystem.Application.Identity.Services.Authentication;
 using MieleSystem.Application.Identity.Services.Email;
 using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Domain.Identity.Enums;

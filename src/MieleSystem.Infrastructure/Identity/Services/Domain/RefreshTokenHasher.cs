@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using MieleSystem.Domain.Identity.Services;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Domain;
 
 /// <summary>
 /// Implementação do hasher de refresh tokens utilizando o algoritmo SHA-256.

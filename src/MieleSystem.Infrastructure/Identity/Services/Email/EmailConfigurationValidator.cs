@@ -1,6 +1,6 @@
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Email;
+namespace MieleSystem.Infrastructure.Identity.Services.Email;
 
 /// <summary>
 /// Serviço responsável pela validação das configurações de e-mail.

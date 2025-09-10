@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using MieleSystem.Application.Identity.Services.Email;
 
-namespace MieleSystem.Infrastructure.Identity.Email;
+namespace MieleSystem.Infrastructure.Identity.Services.Email;
 
 /// <summary>
 /// Serviço responsável pela renderização de templates de e-mail.

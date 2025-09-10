@@ -4,7 +4,7 @@ using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Domain.Identity.ValueObjects;
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Domain;
 
 /// <summary>
 /// Implementação baseada em código numérico randômico de 6 dígitos.
