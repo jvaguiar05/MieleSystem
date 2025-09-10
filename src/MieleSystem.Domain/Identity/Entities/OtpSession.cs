@@ -25,7 +25,7 @@ public class OtpSession : Entity
     public DateTime? UsedAtUtc { get; private set; }
 
     // FK + navegação (backing para EF; permanece encapsulado no agregado)
-    private int UserId { get; set; }
+    public int UserId { get; set; }
     private User User { get; set; } = null!;
 
     // Ctor para EF

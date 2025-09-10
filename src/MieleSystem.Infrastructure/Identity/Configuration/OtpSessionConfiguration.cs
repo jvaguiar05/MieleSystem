@@ -41,13 +41,7 @@ public sealed class OtpSessionConfiguration : IEntityTypeConfiguration<OtpSessio
             }
         );
 
-        // FK privada para User
-        builder.Property<int>("UserId").IsRequired();
-
-        builder
-            .HasOne<User>()
-            .WithMany() // navegação privada
-            .HasForeignKey("UserId")
-            .OnDelete(DeleteBehavior.Cascade);
+        // FK para User
+        builder.Property(x => x.UserId).IsRequired();
     }
 }

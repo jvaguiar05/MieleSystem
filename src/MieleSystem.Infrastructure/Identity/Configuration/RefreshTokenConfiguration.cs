@@ -47,8 +47,7 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             .HasIndex(x => new { x.UserId, x.CreatedAtUtc })
             .HasDatabaseName("IX_RefreshTokens_UserId_CreatedAtUtc");
 
-        // FK para User (privada)
-        builder.Property<int>("UserId").IsRequired();
-        builder.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade);
+        // FK para User
+        builder.Property(x => x.UserId).IsRequired();
     }
 }

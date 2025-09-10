@@ -50,8 +50,7 @@ public sealed class UserConnectionLogConfiguration : IEntityTypeConfiguration<Us
             .HasIndex(x => x.ConnectedAtUtc)
             .HasDatabaseName("IX_UserConnectionLogs_ConnectedAtUtc");
 
-        // FK privada para User
-        builder.Property<int>("UserId").IsRequired();
-        builder.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade);
+        // FK para User
+        builder.Property(x => x.UserId).IsRequired();
     }
 }

@@ -55,13 +55,19 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder
             .HasMany(x => x.RefreshTokens)
             .WithOne()
-            .HasForeignKey("UserId")
+            .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .HasMany(x => x.OtpSessions)
             .WithOne()
-            .HasForeignKey("UserId")
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasMany(x => x.ConnectionLogs)
+            .WithOne()
+            .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
