@@ -11,11 +11,15 @@ namespace MieleSystem.Presentation.Controllers.Identity;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AuthController(IMediator mediator, IHttpContextAuthenticationService authService)
-    : ControllerBase
+public class AuthController(
+    IMediator mediator,
+    IHttpContextAuthenticationService authService,
+    ILogger<AuthController> logger
+) : ControllerBase
 {
     private readonly IMediator _mediator = mediator;
     private readonly IHttpContextAuthenticationService _authService = authService;
+    private readonly ILogger<AuthController> _logger = logger;
 
     /// <summary>
     /// Registra um novo usuário.
@@ -63,6 +67,12 @@ public class AuthController(IMediator mediator, IHttpContextAuthenticationServic
                 "Dados de login inválidos."
             );
 
+        _logger.LogInformation(
+            "Appending refresh token {RefreshToken} to response cookies for user {Email}",
+            loginData.PlainTextRefreshToken,
+            command.Email
+        );
+
         Response.Cookies.Append(
             "refreshToken",
             loginData.PlainTextRefreshToken,
@@ -99,6 +109,12 @@ public class AuthController(IMediator mediator, IHttpContextAuthenticationServic
                 StatusCodes.Status500InternalServerError,
                 "Dados de login inválidos."
             );
+
+        _logger.LogInformation(
+            "Appending refresh token {RefreshToken} to response cookies for user {Email}",
+            loginData.PlainTextRefreshToken,
+            command.Email
+        );
 
         Response.Cookies.Append(
             "refreshToken",
