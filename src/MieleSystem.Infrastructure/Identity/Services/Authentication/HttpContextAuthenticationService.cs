@@ -4,24 +4,12 @@ using MieleSystem.Application.Identity.Services.Authentication;
 namespace MieleSystem.Infrastructure.Identity.Services.Authentication;
 
 /// <summary>
-/// Serviço para extrair informações de contexto de autenticação a partir do HttpContext.
-/// </summary>
-public interface IHttpContextAuthenticationService
-{
-    /// <summary>
-    /// Extrai as informações de cliente da requisição atual.
-    /// </summary>
-    AuthenticationClientInfo? GetCurrentClientInfo();
-}
-
-/// <summary>
 /// Implementação do serviço que extrai contexto de autenticação do HttpContext.
 /// </summary>
 public sealed class HttpContextAuthenticationService(IHttpContextAccessor httpContextAccessor)
     : IHttpContextAuthenticationService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor =
-        httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     public AuthenticationClientInfo? GetCurrentClientInfo()
     {
@@ -40,6 +28,12 @@ public sealed class HttpContextAuthenticationService(IHttpContextAccessor httpCo
         return ExtractClientInfoDirectly(httpContext);
     }
 
+    /// <summary>
+    /// Extrai as informações de cliente diretamente do HttpContext.
+    /// Utilizado como fallback caso o middleware não esteja configurado.
+    /// </summary>
+    /// <param name="context">Contexto HTTP.</param>
+    /// <returns>Informações do cliente extraídas.</returns>
     private static AuthenticationClientInfo ExtractClientInfoDirectly(HttpContext context)
     {
         var request = context.Request;
@@ -59,6 +53,13 @@ public sealed class HttpContextAuthenticationService(IHttpContextAccessor httpCo
         return new AuthenticationClientInfo(ipAddress, userAgent, deviceId);
     }
 
+    /// <summary>
+    /// Obtém o endereço IP do cliente a partir do HttpContext.
+    /// Considera cabeçalhos comuns de proxy.
+    /// Caso de uso: Extração de informações de cliente para autenticação.
+    /// </summary>
+    /// <param name="context">Contexto HTTP.</param>
+    /// <returns>Endereço IP do cliente.</returns>
     private static string GetClientIpAddress(HttpContext context)
     {
         var ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();

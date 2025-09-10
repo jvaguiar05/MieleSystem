@@ -11,13 +11,16 @@ namespace MieleSystem.Presentation.Controllers.Identity;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AuthController(IMediator mediator) : ControllerBase
+public class AuthController(IMediator mediator, IHttpContextAuthenticationService authService)
+    : ControllerBase
 {
     private readonly IMediator _mediator = mediator;
+    private readonly IHttpContextAuthenticationService _authService = authService;
 
     /// <summary>
     /// Registra um novo usuário.
     /// </summary>
+    /// <param name="command">Comando de registro contendo nome, email, senha e cargo (opcional).</param>
     /// <returns>Public ID (Guid) do usuário registrado.</returns>
     [AllowAnonymous]
     [HttpPost("register")]
@@ -30,12 +33,13 @@ public class AuthController(IMediator mediator) : ControllerBase
     /// <summary>
     /// Autentica um usuário existente.
     /// </summary>
+    /// <param name="command">Comando de login contendo email e senha.</param>
     /// <returns>Access token (JWT) no corpo da resposta e o Refresh Token em um cookie HttpOnly.</returns>
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginUserCommand command)
     {
-        var clientInfo = HttpContext.Items["AuthenticationClientInfo"] as AuthenticationClientInfo;
+        var clientInfo = _authService.GetCurrentClientInfo();
 
         var commandWithClientInfo = new LoginUserCommand
         {
@@ -77,6 +81,7 @@ public class AuthController(IMediator mediator) : ControllerBase
     /// <summary>
     /// Verifica o código OTP e completa o processo de autenticação.
     /// </summary>
+    /// <param name="command">Comando de verificação OTP contendo email e código OTP.</param>
     /// <returns>Access token (JWT) no corpo da resposta e o Refresh Token em um cookie HttpOnly.</returns>
     [AllowAnonymous]
     [HttpPost("verify-otp")]

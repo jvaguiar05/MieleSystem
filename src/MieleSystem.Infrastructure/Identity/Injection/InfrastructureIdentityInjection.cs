@@ -62,10 +62,8 @@ public static class InfrastructureIdentityInjection
 
         services.AddScoped<IOtpService, OtpService>();
 
-        // Authentication context service
+        // Serviços de contexto de autenticação
         services.AddScoped<IAuthenticationContextService, AuthenticationContextService>();
-
-        // HTTP Context service for authentication
         services.AddScoped<IHttpContextAuthenticationService, HttpContextAuthenticationService>();
 
         // Serviços de envio de e-mail
