@@ -1,17 +1,17 @@
 using MieleSystem.Application.Identity.DTOs;
-using MieleSystem.Domain.Identity.Entities;
 
 namespace MieleSystem.Application.Identity.Stores;
 
 /// <summary>
 /// Store para leitura de dados de conexão de usuários.
+/// Retorna DTOs para operações de consulta e verificação.
 /// </summary>
 public interface IUserConnectionLogReadStore
 {
     /// <summary>
     /// Obtém os logs de conexão de um usuário por período.
     /// </summary>
-    Task<IEnumerable<UserConnectionLog>> GetByUserIdAsync(
+    Task<IEnumerable<UserConnectionLogDto>> GetByUserIdAsync(
         int userId,
         int days = 30,
         CancellationToken ct = default
@@ -20,7 +20,7 @@ public interface IUserConnectionLogReadStore
     /// <summary>
     /// Obtém logs de conexão por endereço IP.
     /// </summary>
-    Task<IEnumerable<UserConnectionLog>> GetByIpAddressAsync(
+    Task<IEnumerable<UserConnectionLogDto>> GetByIpAddressAsync(
         string ipAddress,
         int days = 7,
         CancellationToken ct = default
@@ -48,7 +48,7 @@ public interface IUserConnectionLogReadStore
     /// <summary>
     /// Obtém logs suspeitos para análise de segurança.
     /// </summary>
-    Task<IEnumerable<UserConnectionLog>> GetSuspiciousConnectionsAsync(
+    Task<IEnumerable<UserConnectionLogDto>> GetSuspiciousConnectionsAsync(
         int days = 7,
         CancellationToken ct = default
     );

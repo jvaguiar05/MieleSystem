@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using MieleSystem.Application.Identity.DTOs;
 using MieleSystem.Application.Identity.Stores;
@@ -8,13 +10,15 @@ namespace MieleSystem.Infrastructure.Identity.Persistence.Stores;
 
 /// <summary>
 /// Implementação do store para leitura de dados de conexão de usuários.
+/// Utiliza AutoMapper para converter entidades em DTOs.
 /// </summary>
-public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserConnectionLogReadStore
+public sealed class UserConnectionLogReadStore(MieleDbContext context, IMapper mapper)
+    : IUserConnectionLogReadStore
 {
-    private readonly MieleDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
+    private readonly MieleDbContext _context = context;
+    private readonly IMapper _mapper = mapper;
 
-    public async Task<IEnumerable<UserConnectionLog>> GetByUserIdAsync(
+    public async Task<IEnumerable<UserConnectionLogDto>> GetByUserIdAsync(
         int userId,
         int days = 30,
         CancellationToken ct = default
@@ -28,10 +32,11 @@ public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserCo
             .Where(log => log.ConnectedAtUtc >= cutoffDate)
             .OrderByDescending(log => log.ConnectedAtUtc)
             .AsNoTracking()
+            .ProjectTo<UserConnectionLogDto>(_mapper.ConfigurationProvider)
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<UserConnectionLog>> GetByIpAddressAsync(
+    public async Task<IEnumerable<UserConnectionLogDto>> GetByIpAddressAsync(
         string ipAddress,
         int days = 7,
         CancellationToken ct = default
@@ -45,6 +50,7 @@ public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserCo
             .Where(log => log.ConnectedAtUtc >= cutoffDate)
             .OrderByDescending(log => log.ConnectedAtUtc)
             .AsNoTracking()
+            .ProjectTo<UserConnectionLogDto>(_mapper.ConfigurationProvider)
             .ToListAsync(ct);
     }
 
@@ -75,14 +81,15 @@ public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserCo
     {
         var cutoffDate = DateTime.UtcNow.AddDays(-days);
 
-        var logs = await _context
+        var logsQuery = _context
             .Set<UserConnectionLog>()
             .Where(log => EF.Property<int>(log, "UserId") == userId)
             .Where(log => log.ConnectedAtUtc >= cutoffDate)
-            .AsNoTracking()
-            .ToListAsync(ct);
+            .AsNoTracking();
 
-        if (!logs.Any())
+        var hasAnyLogs = await logsQuery.AnyAsync(ct);
+
+        if (!hasAnyLogs)
         {
             return new ConnectionStatsDto
             {
@@ -94,15 +101,16 @@ public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserCo
             };
         }
 
-        var totalConnections = logs.Count;
-        var successfulConnections = logs.Count(l => l.IsSuccessful);
+        var successfulConnections = await logsQuery.CountAsync(l => l.IsSuccessful, ct);
+        var totalConnections = await logsQuery.CountAsync(ct);
         var failedConnections = totalConnections - successfulConnections;
-        var uniqueIps = logs.Select(l => l.IpAddress).Distinct().Count();
-        var lastSuccessfulConnection = logs.Where(l => l.IsSuccessful)
+        var uniqueIps = await logsQuery.Select(l => l.IpAddress).Distinct().CountAsync(ct);
+        var lastSuccessfulConnection = await logsQuery
+            .Where(l => l.IsSuccessful)
             .OrderByDescending(l => l.ConnectedAtUtc)
-            .FirstOrDefault()
-            ?.ConnectedAtUtc;
-        var lastConnection = logs.Max(l => l.ConnectedAtUtc);
+            .Select(l => (DateTime?)l.ConnectedAtUtc)
+            .FirstOrDefaultAsync(ct);
+        var lastConnection = await logsQuery.MaxAsync(l => l.ConnectedAtUtc, ct);
 
         return new ConnectionStatsDto
         {
@@ -114,7 +122,7 @@ public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserCo
         };
     }
 
-    public async Task<IEnumerable<UserConnectionLog>> GetSuspiciousConnectionsAsync(
+    public async Task<IEnumerable<UserConnectionLogDto>> GetSuspiciousConnectionsAsync(
         int days = 7,
         CancellationToken ct = default
     )
@@ -137,6 +145,7 @@ public sealed class UserConnectionLogReadStore(MieleDbContext context) : IUserCo
             .Where(log => suspiciousIps.Contains(log.IpAddress))
             .OrderByDescending(log => log.ConnectedAtUtc)
             .AsNoTracking()
+            .ProjectTo<UserConnectionLogDto>(_mapper.ConfigurationProvider)
             .ToListAsync(ct);
     }
 }
