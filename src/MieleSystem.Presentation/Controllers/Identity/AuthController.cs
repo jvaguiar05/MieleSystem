@@ -97,7 +97,18 @@ public class AuthController(
     [HttpPost("verify-otp")]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyLoginOtpCommand command)
     {
-        var result = await _mediator.Send(command);
+        var clientInfo = _authService.GetCurrentClientInfo();
+
+        var commandWithClientInfo = new VerifyLoginOtpCommand
+        {
+            Email = command.Email,
+            OtpCode = command.OtpCode,
+            ClientIp = clientInfo?.IpAddress,
+            UserAgent = clientInfo?.UserAgent,
+            DeviceId = clientInfo?.DeviceId,
+        };
+
+        var result = await _mediator.Send(commandWithClientInfo);
 
         if (!result.IsSuccess)
             return result.ToActionResult();

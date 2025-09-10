@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Application.Identity.DTOs;
@@ -52,18 +53,42 @@ public sealed class LoginUserHandler(
             );
 
         if (!_passwordHasher.Verify(user.PasswordHash.Value, request.Password))
+        {
+            user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: "Login failed: incorrect password"
+            );
+            // connectionLog.IsSuccessful já é false por padrão
+
+            _users.Update(user);
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result<LoginUserResult>.Failure(
                 Error.Unauthorized(
                     $"Credenciais inválidas: senha incorreta para usuário {request.Email}."
                 )
             );
+        }
 
         if (user.RegistrationSituation != UserRegistrationSituation.Accepted)
+        {
+            user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: "Login failed: account not approved"
+            );
+
+            _users.Update(user);
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result<LoginUserResult>.Failure(
                 Error.Forbidden("Sua conta ainda não foi aprovada por um administrador.")
             );
+        }
 
-        // Checa se OTP é necessário para este login
         var clientInfo = new AuthenticationClientInfo(
             request.ClientIp,
             request.UserAgent,
@@ -78,6 +103,14 @@ public sealed class LoginUserHandler(
             {
                 var otpCode = _otpService.Generate();
                 var otpSession = user.AddOtpSession(otpCode, OtpPurpose.Login);
+
+                var otpConnectionLog = user.AddConnectionLog(
+                    request.ClientIp ?? "Unknown",
+                    request.UserAgent ?? "Unknown",
+                    request.DeviceId,
+                    additionalInfo: "Login requires OTP verification"
+                );
+                otpConnectionLog.MarkOtpRequired("Security policy or unknown device/IP");
 
                 _users.Update(user);
                 await _unitOfWork.SaveChangesAsync(ct);
@@ -95,6 +128,21 @@ public sealed class LoginUserHandler(
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(ct);
+
+                user.AddConnectionLog(
+                    request.ClientIp ?? "Unknown",
+                    request.UserAgent ?? "Unknown",
+                    request.DeviceId,
+                    additionalInfo: "Login failed: OTP generation error"
+                );
+
+                try
+                {
+                    _users.Update(user);
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+                catch { }
+
                 return Result<LoginUserResult>.Failure(
                     Error.Infrastructure(
                         "login.otp_generation_error",
@@ -117,9 +165,16 @@ public sealed class LoginUserHandler(
             var refreshTokenHash = _refreshTokenHasher.Hash(plainTextRefreshToken);
             var refreshTokenHashVo = new RefreshTokenHash(refreshTokenHash);
 
-            // A validade do token vem da configuração
             var refreshTokenExpiresAt = _tokenService.GetRefreshTokenExpiration();
             user.AddRefreshToken(refreshTokenHashVo, refreshTokenExpiresAt);
+
+            var successConnectionLog = user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: "Login successful without OTP"
+            );
+            successConnectionLog.MarkAsSuccessful();
 
             _users.Update(user);
 
@@ -142,6 +197,20 @@ public sealed class LoginUserHandler(
         catch (Exception ex) // Captura exceções inesperadas do banco ou de lógica
         {
             await _unitOfWork.RollbackTransactionAsync(ct);
+
+            user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: $"Login failed: infrastructure error - {ex.Message}"
+            );
+
+            try
+            {
+                _users.Update(user);
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
+            catch { }
 
             return Result<LoginUserResult>.Failure(
                 Error.Infrastructure(

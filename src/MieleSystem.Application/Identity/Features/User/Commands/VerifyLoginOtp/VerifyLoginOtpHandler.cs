@@ -39,14 +39,40 @@ public sealed class VerifyLoginOtpHandler(
             );
 
         if (user.RegistrationSituation != UserRegistrationSituation.Accepted)
+        {
+            var failedConnectionLog = user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: "OTP verification failed: account not approved"
+            );
+            failedConnectionLog.MarkOtpRequired("Account verification pending");
+
+            _users.Update(user);
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result<VerifyLoginOtpResult>.Failure(
                 Error.Forbidden("Sua conta ainda não foi aprovada por um administrador.")
             );
+        }
 
         if (!user.TryConsumeOtp(request.OtpCode))
+        {
+            var invalidOtpConnectionLog = user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: "OTP verification failed: invalid or expired code"
+            );
+            invalidOtpConnectionLog.MarkOtpRequired("OTP verification attempted");
+
+            _users.Update(user);
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result<VerifyLoginOtpResult>.Failure(
                 Error.Unauthorized("Código OTP inválido ou expirado.")
             );
+        }
 
         await _unitOfWork.BeginTransactionAsync(ct);
 
@@ -62,6 +88,15 @@ public sealed class VerifyLoginOtpHandler(
 
             var refreshTokenExpiresAt = _tokenService.GetRefreshTokenExpiration();
             user.AddRefreshToken(refreshTokenHashVo, refreshTokenExpiresAt);
+
+            var successConnectionLog = user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: "Login successful with OTP verification"
+            );
+            successConnectionLog.MarkAsSuccessful();
+            successConnectionLog.MarkOtpRequired("OTP verification completed successfully");
 
             _users.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -84,6 +119,21 @@ public sealed class VerifyLoginOtpHandler(
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync(ct);
+
+            var infrastructureFailureLog = user.AddConnectionLog(
+                request.ClientIp ?? "Unknown",
+                request.UserAgent ?? "Unknown",
+                request.DeviceId,
+                additionalInfo: $"OTP verification failed: infrastructure error - {ex.Message}"
+            );
+            infrastructureFailureLog.MarkOtpRequired("OTP verification infrastructure error");
+
+            try
+            {
+                _users.Update(user);
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
+            catch { }
 
             return Result<VerifyLoginOtpResult>.Failure(
                 Error.Infrastructure(
