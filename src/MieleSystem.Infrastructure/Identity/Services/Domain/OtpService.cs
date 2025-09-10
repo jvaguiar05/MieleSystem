@@ -21,11 +21,6 @@ public sealed class OtpService(IOptions<OtpOptions> options) : IOtpService
         return new OtpCode(code, expiresAt);
     }
 
-    public bool Validate(OtpCode expected, string provided)
-    {
-        return !expected.IsExpired() && expected.Matches(provided);
-    }
-
     private static string GenerateSixDigitCode()
     {
         var number = RandomNumberGenerator.GetInt32(100_000, 1_000_000);

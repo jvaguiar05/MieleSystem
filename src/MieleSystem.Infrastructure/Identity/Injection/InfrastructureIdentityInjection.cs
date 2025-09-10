@@ -9,6 +9,7 @@ using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Options;
 using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 using MieleSystem.Infrastructure.Identity.Persistence.Stores;
+using MieleSystem.Infrastructure.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Services.Authentication;
 using MieleSystem.Infrastructure.Identity.Services.Domain;
 using MieleSystem.Infrastructure.Identity.Services.Email;
@@ -33,6 +34,7 @@ public static class InfrastructureIdentityInjection
         services.AddScoped<IUserReadStore, UserReadStore>();
         services.AddScoped<IRefreshTokenReadStore, RefreshTokenReadStore>();
         services.AddScoped<IUserConnectionLogReadStore, UserConnectionLogReadStore>();
+        services.AddScoped<IOtpSessionReadStore, OtpSessionReadStore>();
 
         // Serviços de Hashing (appsettings.json / appsettings.{Environment}.json)
         services
@@ -61,6 +63,9 @@ public static class InfrastructureIdentityInjection
             .ValidateOnStart();
 
         services.AddScoped<IOtpService, OtpService>();
+
+        // Serviços de verificação de OTP
+        services.AddScoped<IOtpVerificationService, OtpVerificationService>();
 
         // Serviços de contexto de autenticação
         services.AddScoped<IAuthenticationContextService, AuthenticationContextService>();
