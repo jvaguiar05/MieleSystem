@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MieleSystem.Application.Identity.Features.User.Commands.LoginUser;
+using MieleSystem.Application.Identity.Features.User.Commands.RegenerateOtp;
 using MieleSystem.Application.Identity.Features.User.Commands.RegisterUser;
 using MieleSystem.Application.Identity.Features.User.Commands.VerifyLoginOtp;
 using MieleSystem.Application.Identity.Services.Authentication;
@@ -140,5 +141,32 @@ public class AuthController(
         );
 
         return Ok(loginData.Dto);
+    }
+
+    /// <summary>
+    /// Regenera um código OTP expirado para o usuário.
+    /// </summary>
+    /// <param name="command">Comando contendo o email do usuário.</param>
+    /// <returns>Resultado da regeneração de OTP.</returns>
+    [AllowAnonymous]
+    [HttpPost("regenerate-otp")]
+    public async Task<IActionResult> RegenerateOtp([FromBody] RegenerateOtpCommand command)
+    {
+        var clientInfo = _authService.GetCurrentClientInfo();
+
+        var commandWithClientInfo = new RegenerateOtpCommand
+        {
+            Email = command.Email,
+            ClientIp = clientInfo?.IpAddress,
+            UserAgent = clientInfo?.UserAgent,
+            DeviceId = clientInfo?.DeviceId,
+        };
+
+        var result = await _mediator.Send(commandWithClientInfo);
+
+        if (!result.IsSuccess)
+            return result.ToActionResult();
+
+        return Ok(result.Value);
     }
 }
