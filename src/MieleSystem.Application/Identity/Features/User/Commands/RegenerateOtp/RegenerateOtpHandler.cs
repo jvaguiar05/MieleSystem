@@ -39,60 +39,21 @@ public sealed class RegenerateOtpHandler(
                 Error.NotFound("user.not_found", "Usuário não encontrado.")
             );
 
-        // Verificar se a conta está suspensa
         if (user.IsSuspended)
-        {
-            var suspendedLog = user.AddConnectionLog(
-                request.ClientIp ?? "Unknown",
-                request.UserAgent ?? "Unknown",
-                request.DeviceId,
-                additionalInfo: "OTP regeneration blocked: account suspended"
-            );
-
-            _users.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
-
             return Result<RegenerateOtpResult>.Failure(
                 Error.Forbidden("Conta suspensa. Entre em contato com o suporte.")
             );
-        }
 
-        // Verificar se deve ser suspenso por excesso de falhas
-        if (user.ShouldBeSuspendedForOtpFailures(OtpPurpose.Login))
-        {
-            user.SuspendAccount("Excesso de falhas na verificação de OTP");
-
-            _users.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
-
-            return Result<RegenerateOtpResult>.Failure(
-                Error.Forbidden("Conta suspensa automaticamente por excesso de tentativas de OTP.")
-            );
-        }
-
-        // Tentar regenerar OTP
         var newOtpCode = _otpService.Generate();
         var regenerated = user.TryRegenerateOtp(newOtpCode, OtpPurpose.Login);
 
         if (!regenerated)
-        {
-            var failedLog = user.AddConnectionLog(
-                request.ClientIp ?? "Unknown",
-                request.UserAgent ?? "Unknown",
-                request.DeviceId,
-                additionalInfo: "OTP regeneration failed: limit exceeded"
-            );
-
-            _users.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
-
             return Result<RegenerateOtpResult>.Failure(
                 Error.Validation(
                     "otp.regeneration_limit",
                     "Limite de regenerações de OTP excedido. Tente fazer login novamente mais tarde."
                 )
             );
-        }
 
         try
         {
@@ -100,16 +61,6 @@ public sealed class RegenerateOtpHandler(
             await _unitOfWork.SaveChangesAsync(ct);
 
             await _emailService.SendOtpAsync(user.Email, newOtpCode.Code, newOtpCode.ExpiresAt, ct);
-
-            var successLog = user.AddConnectionLog(
-                request.ClientIp ?? "Unknown",
-                request.UserAgent ?? "Unknown",
-                request.DeviceId,
-                additionalInfo: "OTP regenerated successfully"
-            );
-
-            _users.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
 
             var latestSession = user
                 .OtpSessions.Where(s => s.Purpose == OtpPurpose.Login)
@@ -130,20 +81,6 @@ public sealed class RegenerateOtpHandler(
         }
         catch (Exception ex)
         {
-            var errorLog = user.AddConnectionLog(
-                request.ClientIp ?? "Unknown",
-                request.UserAgent ?? "Unknown",
-                request.DeviceId,
-                additionalInfo: $"OTP regeneration error: {ex.Message}"
-            );
-
-            try
-            {
-                _users.Update(user);
-                await _unitOfWork.SaveChangesAsync(ct);
-            }
-            catch { }
-
             return Result<RegenerateOtpResult>.Failure(
                 Error.Infrastructure(
                     "otp.regeneration_error",

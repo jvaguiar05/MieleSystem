@@ -59,7 +59,20 @@ public sealed class LoginUserHandler(
                 request.DeviceId,
                 additionalInfo: "Login failed: incorrect password"
             );
-            // connectionLog.IsSuccessful já é false por padrão
+
+            if (user.ShouldBeSuspendedForPasswordFailures())
+            {
+                user.SuspendAccount("Excesso de tentativas de senha incorreta");
+
+                _users.Update(user);
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                return Result<LoginUserResult>.Failure(
+                    Error.Forbidden(
+                        "Conta suspensa por excesso de tentativas de login com senha incorreta."
+                    )
+                );
+            }
 
             _users.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -193,7 +206,7 @@ public sealed class LoginUserHandler(
 
             return Result<LoginUserResult>.Success(finalResult);
         }
-        catch (Exception ex) // Captura exceções inesperadas do banco ou de lógica
+        catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync(ct);
 

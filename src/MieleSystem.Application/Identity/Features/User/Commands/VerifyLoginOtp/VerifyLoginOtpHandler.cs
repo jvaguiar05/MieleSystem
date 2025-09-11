@@ -69,6 +69,21 @@ public sealed class VerifyLoginOtpHandler(
                 );
                 consumeFailureLog.MarkOtpRequired("Verificação OTP falhou");
 
+                // Verificar se deve suspender por excesso de falhas de OTP
+                if (user.ShouldBeSuspendedForOtpFailures(OtpPurpose.Login))
+                {
+                    user.SuspendAccount("Excesso de falhas na verificação de OTP");
+
+                    _users.Update(user);
+                    await _unitOfWork.SaveChangesAsync(ct);
+
+                    return Result<VerifyLoginOtpResult>.Failure(
+                        Error.Forbidden(
+                            "Conta suspensa por excesso de tentativas de OTP incorreto."
+                        )
+                    );
+                }
+
                 _users.Update(user);
                 await _unitOfWork.SaveChangesAsync(ct);
 

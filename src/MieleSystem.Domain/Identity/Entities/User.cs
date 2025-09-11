@@ -259,6 +259,27 @@ public sealed class User : AggregateRoot, ISoftDeletable
         return failedSessionsCount >= 3;
     }
 
+    /// <summary>
+    /// Verifica se o usuário atingiu o limite de tentativas de senha incorreta e deve ser suspenso.
+    /// Baseado no número de falhas de login recentes.
+    /// </summary>
+    /// <param name="hours">Período em horas para análise (padrão: 1 hora).</param>
+    /// <returns>True se deve ser suspenso por excesso de tentativas de senha incorreta.</returns>
+    public bool ShouldBeSuspendedForPasswordFailures(int hours = 1)
+    {
+        var cutoffTime = DateTime.UtcNow.AddHours(-hours);
+
+        var passwordFailuresCount = _connectionLogs
+            .Where(log => log.ConnectedAtUtc >= cutoffTime)
+            .Where(log => !log.IsSuccessful)
+            .Count(log =>
+                log.AdditionalInfo != null && log.AdditionalInfo.Contains("incorrect password")
+            );
+
+        // 5 tentativas de senha incorreta = suspensão
+        return passwordFailuresCount >= 5;
+    }
+
     // -----------------------------
     // Ciclo de vida dos logs de conexão (owned by aggregate)
     // -----------------------------
