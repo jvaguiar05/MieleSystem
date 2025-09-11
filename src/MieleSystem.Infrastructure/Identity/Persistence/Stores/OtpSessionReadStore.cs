@@ -19,22 +19,25 @@ public sealed class OtpSessionReadStore(MieleDbContext context, IMapper mapper)
     private readonly MieleDbContext _context = context;
     private readonly IMapper _mapper = mapper;
 
+    private IQueryable<OtpSession> GetActiveSessionsQuery()
+    {
+        var now = DateTime.UtcNow;
+        return _context
+            .Set<OtpSession>()
+            .Where(session => !session.IsUsed && session.Otp.ExpiresAt > now)
+            .AsNoTracking();
+    }
+
     public async Task<OtpSessionDto?> GetLatestActiveSessionAsync(
         int userId,
         OtpPurpose purpose,
         CancellationToken ct = default
     )
     {
-        var now = DateTime.UtcNow;
-
-        return await _context
-            .Set<OtpSession>()
+        return await GetActiveSessionsQuery()
             .Where(session => EF.Property<int>(session, "UserId") == userId)
             .Where(session => session.Purpose == purpose)
-            .Where(session => !session.IsUsed)
-            .Where(session => session.Otp.ExpiresAt > now)
             .OrderByDescending(session => session.CreatedAtUtc)
-            .AsNoTracking()
             .ProjectTo<OtpSessionDto>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(ct);
     }
@@ -44,15 +47,9 @@ public sealed class OtpSessionReadStore(MieleDbContext context, IMapper mapper)
         CancellationToken ct = default
     )
     {
-        var now = DateTime.UtcNow;
-
-        return await _context
-            .Set<OtpSession>()
+        return await GetActiveSessionsQuery()
             .Where(session => EF.Property<int>(session, "UserId") == userId)
-            .Where(session => !session.IsUsed)
-            .Where(session => session.Otp.ExpiresAt > now)
             .OrderByDescending(session => session.CreatedAtUtc)
-            .AsNoTracking()
             .ProjectTo<OtpSessionDto>(_mapper.ConfigurationProvider)
             .ToListAsync(ct);
     }
@@ -64,17 +61,11 @@ public sealed class OtpSessionReadStore(MieleDbContext context, IMapper mapper)
         CancellationToken ct = default
     )
     {
-        var now = DateTime.UtcNow;
-
-        return await _context
-            .Set<OtpSession>()
+        return await GetActiveSessionsQuery()
             .Where(session => EF.Property<int>(session, "UserId") == userId)
-            .Where(session => session.Purpose == purpose)
-            .Where(session => !session.IsUsed)
-            .Where(session => session.Otp.ExpiresAt > now)
             .Where(session => session.Otp.Code == code)
+            .Where(session => session.Purpose == purpose)
             .OrderByDescending(session => session.CreatedAtUtc)
-            .AsNoTracking()
             .ProjectTo<OtpSessionDto>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(ct);
     }

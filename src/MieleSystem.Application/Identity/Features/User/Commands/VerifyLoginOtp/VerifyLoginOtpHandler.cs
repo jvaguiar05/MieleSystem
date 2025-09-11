@@ -86,23 +86,23 @@ public sealed class VerifyLoginOtpHandler(
             );
         }
 
-        if (!user.TryConsumeOtp(request.OtpCode))
-        {
-            var consumeFailureLog = user.AddConnectionLog(
-                request.ClientIp ?? "Unknown",
-                request.UserAgent ?? "Unknown",
-                request.DeviceId,
-                additionalInfo: "OTP verification failed: unable to consume OTP"
-            );
-            consumeFailureLog.MarkOtpRequired("OTP consumption failed");
+        // if (!user.TryConsumeOtp(request.OtpCode))
+        // {
+        //     var consumeFailureLog = user.AddConnectionLog(
+        //         request.ClientIp ?? "Unknown",
+        //         request.UserAgent ?? "Unknown",
+        //         request.DeviceId,
+        //         additionalInfo: "OTP verification failed: unable to consume OTP"
+        //     );
+        //     consumeFailureLog.MarkOtpRequired("OTP consumption failed");
 
-            _users.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
+        //     _users.Update(user);
+        //     await _unitOfWork.SaveChangesAsync(ct);
 
-            return Result<VerifyLoginOtpResult>.Failure(
-                Error.Unauthorized("Erro interno na verificação do OTP.")
-            );
-        }
+        //     return Result<VerifyLoginOtpResult>.Failure(
+        //         Error.Unauthorized("Erro interno na verificação do OTP.")
+        //     );
+        // }
 
         await _unitOfWork.BeginTransactionAsync(ct);
 
