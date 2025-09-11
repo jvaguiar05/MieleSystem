@@ -86,6 +86,8 @@ public sealed class VerifyLoginOtpHandler(
             );
         }
 
+        // Esta parte está quebrada porque o OTP já é consumido na verificação acima.
+        // Deixei comentada para referência futura.
         // if (!user.TryConsumeOtp(request.OtpCode))
         // {
         //     var consumeFailureLog = user.AddConnectionLog(
