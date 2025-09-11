@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Application.Identity.DTOs;
@@ -21,4 +22,13 @@ public sealed class LoginUserCommand : IRequest<Result<LoginUserResult>>
 {
     public string Email { get; init; } = null!;
     public string Password { get; init; } = null!;
+
+    [JsonIgnore]
+    public string? ClientIp { get; init; }
+
+    [JsonIgnore]
+    public string? UserAgent { get; init; }
+
+    [JsonIgnore]
+    public string? DeviceId { get; init; }
 }

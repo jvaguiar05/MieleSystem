@@ -2,10 +2,8 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using MieleSystem.Application.Common.Behaviors;
-using MieleSystem.Application.Common.Interfaces;
-using MieleSystem.Application.Common.Utils;
 
-namespace MieleSystem.Application.Common;
+namespace MieleSystem.Application.Common.Injection;
 
 /// <summary>
 /// Contém os métodos de extensão responsáveis por registrar os serviços

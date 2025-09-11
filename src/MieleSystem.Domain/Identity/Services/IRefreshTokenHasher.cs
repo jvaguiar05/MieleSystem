@@ -6,7 +6,7 @@ namespace MieleSystem.Domain.Identity.Services;
 public interface IRefreshTokenHasher
 {
     /// <summary>
-    /// Gera um hash a partir de um refresh token em texto plano.
+    /// Gera um hash a partir de um refresh token em texto pleno.
     /// </summary>
     string Hash(string plainTextToken);
 }

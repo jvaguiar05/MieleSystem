@@ -26,6 +26,7 @@ public sealed class MieleDbContext(DbContextOptions<MieleDbContext> options) : D
     public DbSet<OtpSession> OtpSessions => Set<OtpSession>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<UserAuditLog> UserAuditLogs => Set<UserAuditLog>();
+    public DbSet<UserConnectionLog> UserConnectionLogs => Set<UserConnectionLog>();
 
     // Clients
     // public DbSet<Client> Clients => Set<Client>();

@@ -13,12 +13,4 @@ public interface IOtpService
     /// </summary>
     /// <returns>Objeto de valor representando o código OTP.</returns>
     OtpCode Generate();
-
-    /// <summary>
-    /// Verifica se o código fornecido é válido com base no esperado.
-    /// </summary>
-    /// <param name="expected">Código originalmente gerado pelo sistema.</param>
-    /// <param name="provided">Código fornecido pelo usuário.</param>
-    /// <returns>True se os códigos corresponderem; false caso contrário.</returns>
-    bool Validate(OtpCode expected, string provided);
 }

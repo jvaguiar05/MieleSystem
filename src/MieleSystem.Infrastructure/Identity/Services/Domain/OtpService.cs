@@ -4,7 +4,7 @@ using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Domain.Identity.ValueObjects;
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Domain;
 
 /// <summary>
 /// Implementação baseada em código numérico randômico de 6 dígitos.
@@ -19,11 +19,6 @@ public sealed class OtpService(IOptions<OtpOptions> options) : IOtpService
         var expiresAt = DateTime.UtcNow.AddSeconds(_options.ExpirationSeconds);
 
         return new OtpCode(code, expiresAt);
-    }
-
-    public bool Validate(OtpCode expected, string provided)
-    {
-        return !expected.IsExpired() && expected.Matches(provided);
     }
 
     private static string GenerateSixDigitCode()

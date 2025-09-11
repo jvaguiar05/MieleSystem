@@ -1,17 +1,18 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MieleSystem.Application.Identity.Services.Authentication;
 using MieleSystem.Application.Identity.Services.Email;
 using MieleSystem.Application.Identity.Stores;
 using MieleSystem.Domain.Identity.Repositories;
 using MieleSystem.Domain.Identity.Services;
-using MieleSystem.Infrastructure.Identity.Email;
-using MieleSystem.Infrastructure.Identity.Events.Admin;
-using MieleSystem.Infrastructure.Identity.Events.User;
 using MieleSystem.Infrastructure.Identity.Options;
 using MieleSystem.Infrastructure.Identity.Persistence.Repositories;
 using MieleSystem.Infrastructure.Identity.Persistence.Stores;
 using MieleSystem.Infrastructure.Identity.Services;
+using MieleSystem.Infrastructure.Identity.Services.Authentication;
+using MieleSystem.Infrastructure.Identity.Services.Domain;
+using MieleSystem.Infrastructure.Identity.Services.Email;
 
 namespace MieleSystem.Infrastructure.Identity.Injection;
 
@@ -32,6 +33,8 @@ public static class InfrastructureIdentityInjection
         // Read Stores
         services.AddScoped<IUserReadStore, UserReadStore>();
         services.AddScoped<IRefreshTokenReadStore, RefreshTokenReadStore>();
+        services.AddScoped<IUserConnectionLogReadStore, UserConnectionLogReadStore>();
+        services.AddScoped<IOtpSessionReadStore, OtpSessionReadStore>();
 
         // Serviços de Hashing (appsettings.json / appsettings.{Environment}.json)
         services
@@ -60,6 +63,10 @@ public static class InfrastructureIdentityInjection
             .ValidateOnStart();
 
         services.AddScoped<IOtpService, OtpService>();
+
+        // Serviços de contexto de autenticação
+        services.AddScoped<IAuthenticationContextService, AuthenticationContextService>();
+        services.AddScoped<IHttpContextAuthenticationService, HttpContextAuthenticationService>();
 
         // Serviços de envio de e-mail
         services

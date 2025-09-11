@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MieleSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(MieleDbContext))]
-    [Migration("20250905194818_FixPasswordHash")]
-    partial class FixPasswordHash
+    [Migration("20250911202930_OtpRegeneration")]
+    partial class OtpRegeneration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,10 +39,16 @@ namespace MieleSystem.Infrastructure.Migrations
                     b.Property<bool>("IsUsed")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LastRegeneratedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Purpose")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RegenerationAttempts")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UsedAtUtc")
@@ -92,7 +98,8 @@ namespace MieleSystem.Infrastructure.Migrations
                     b.HasIndex("PublicId")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "CreatedAtUtc")
+                        .HasDatabaseName("IX_RefreshTokens_UserId_CreatedAtUtc");
 
                     b.ToTable("RefreshTokens", (string)null);
                 });
@@ -106,10 +113,10 @@ namespace MieleSystem.Infrastructure.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -172,7 +179,7 @@ namespace MieleSystem.Infrastructure.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<DateTime>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
@@ -190,6 +197,72 @@ namespace MieleSystem.Infrastructure.Migrations
                     b.HasIndex("UserPublicId");
 
                     b.ToTable("UserAuditLogs", (string)null);
+                });
+
+            modelBuilder.Entity("MieleSystem.Domain.Identity.Entities.UserConnectionLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdditionalInfo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("ConnectedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsSuccessful")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OtpReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("PublicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("RequiredOtp")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConnectedAtUtc")
+                        .HasDatabaseName("IX_UserConnectionLogs_ConnectedAtUtc");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("IpAddress", "ConnectedAtUtc")
+                        .HasDatabaseName("IX_UserConnectionLogs_IpAddress_ConnectedAtUtc");
+
+                    b.HasIndex("UserId", "ConnectedAtUtc")
+                        .HasDatabaseName("IX_UserConnectionLogs_UserId_ConnectedAtUtc");
+
+                    b.ToTable("UserConnectionLogs", (string)null);
                 });
 
             modelBuilder.Entity("MieleSystem.Domain.Identity.Entities.OtpSession", b =>
@@ -235,7 +308,7 @@ namespace MieleSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("MieleSystem.Domain.Identity.ValueObjects.Token", "Token", b1 =>
+                    b.OwnsOne("MieleSystem.Domain.Identity.ValueObjects.RefreshTokenHash", "TokenHash", b1 =>
                         {
                             b1.Property<int>("RefreshTokenId")
                                 .HasColumnType("integer");
@@ -254,12 +327,23 @@ namespace MieleSystem.Infrastructure.Migrations
                                 .HasForeignKey("RefreshTokenId");
                         });
 
-                    b.Navigation("Token")
+                    b.Navigation("TokenHash")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MieleSystem.Domain.Identity.Entities.UserConnectionLog", b =>
+                {
+                    b.HasOne("MieleSystem.Domain.Identity.Entities.User", null)
+                        .WithMany("ConnectionLogs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
             modelBuilder.Entity("MieleSystem.Domain.Identity.Entities.User", b =>
                 {
+                    b.Navigation("ConnectionLogs");
+
                     b.Navigation("OtpSessions");
 
                     b.Navigation("RefreshTokens");

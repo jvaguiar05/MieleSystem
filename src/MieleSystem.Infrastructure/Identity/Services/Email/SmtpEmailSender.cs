@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using MieleSystem.Application.Identity.Services.Email;
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Email;
+namespace MieleSystem.Infrastructure.Identity.Services.Email;
 
 /// <summary>
 /// Serviço responsável pelo envio de e-mails via SMTP.

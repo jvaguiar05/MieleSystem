@@ -16,8 +16,8 @@ public sealed class RefreshToken : Entity
     public DateTime? RevokedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
 
-    // FK + navegação (privadas, mantêm o encapsulamento do agregado)
-    private int UserId { get; set; }
+    // FK + navegação (mantêm o encapsulamento do agregado)
+    public int UserId { get; set; }
     private User User { get; set; } = null!;
 
     // EF Core

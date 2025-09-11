@@ -7,6 +7,7 @@ namespace MieleSystem.Domain.Identity.Entities;
 /// <summary>
 /// Representa uma sessão OTP vinculada a um usuário.
 /// É válida enquanto não estiver expirada nem usada.
+/// Controla tentativas e regeneração de códigos.
 /// </summary>
 public class OtpSession : Entity
 {
@@ -24,8 +25,17 @@ public class OtpSession : Entity
     /// <summary>Momento (UTC) em que a sessão foi utilizada.</summary>
     public DateTime? UsedAtUtc { get; private set; }
 
+    /// <summary>Número de tentativas de regeneração de código para esta sessão.</summary>
+    public int RegenerationAttempts { get; private set; } = 0;
+
+    /// <summary>Número máximo de regenerações permitidas por sessão.</summary>
+    public const int MaxRegenerationAttempts = 3;
+
+    /// <summary>Momento (UTC) da última regeneração de código.</summary>
+    public DateTime? LastRegeneratedAtUtc { get; private set; }
+
     // FK + navegação (backing para EF; permanece encapsulado no agregado)
-    private int UserId { get; set; }
+    public int UserId { get; set; }
     private User User { get; set; } = null!;
 
     // Ctor para EF
@@ -53,7 +63,21 @@ public class OtpSession : Entity
     /// </summary>
     public bool IsActive => !IsUsed && !Otp.IsExpired();
 
-    // Add this method to your OtpSession class
+    /// <summary>
+    /// Verifica se o código está expirado.
+    /// </summary>
+    public bool IsExpired => Otp.IsExpired();
+
+    /// <summary>
+    /// Verifica se a sessão pode ser regenerada (não excedeu o limite de tentativas).
+    /// </summary>
+    public bool CanRegenerate => RegenerationAttempts < MaxRegenerationAttempts && !IsUsed;
+
+    /// <summary>
+    /// Verifica se a sessão excedeu o limite de regenerações.
+    /// </summary>
+    public bool HasExceededRegenerationLimit => RegenerationAttempts >= MaxRegenerationAttempts;
+
     public bool IsValid(string code)
     {
         // Use Otp.Matches for code comparison and Otp.IsExpired for expiration check
@@ -78,8 +102,6 @@ public class OtpSession : Entity
 
         IsUsed = true;
         UsedAtUtc = DateTime.UtcNow;
-        // Opcional: disparar um DomainEvent se você quiser auditar “OTP usado”.
-        // AddDomainEvent(new OtpUsedEvent(User.PublicId, CreatedAtUtc));
     }
 
     /// <summary>
@@ -95,20 +117,41 @@ public class OtpSession : Entity
     }
 
     /// <summary>
+    /// Regenera o código OTP desta sessão se ainda for possível.
+    /// Incrementa o contador de tentativas de regeneração.
+    /// </summary>
+    /// <param name="newOtpCode">Novo código OTP gerado.</param>
+    /// <returns>True se regenerou com sucesso, false se excedeu limite.</returns>
+    public bool TryRegenerateCode(OtpCode newOtpCode)
+    {
+        if (!CanRegenerate)
+            return false;
+
+        if (newOtpCode == null)
+            throw new ArgumentNullException(
+                nameof(newOtpCode),
+                "Novo código OTP não pode ser nulo."
+            );
+
+        Otp = newOtpCode;
+        RegenerationAttempts++;
+        LastRegeneratedAtUtc = DateTime.UtcNow;
+
+        return true;
+    }
+
+    /// <summary>
     /// Verifica se o propósito da sessão OTP é para login.
     /// </summary>
-    /// <returns>Booleano indicando se o propósito é para login.</returns>
     public bool IsForLogin() => Purpose == OtpPurpose.Login;
 
     /// <summary>
     /// Verifica se o propósito da sessão OTP é para recuperação de senha.
     /// </summary>
-    /// <returns>Booleano indicando se o propósito é para recuperação de senha.</returns>
     public bool IsForPasswordRecovery() => Purpose == OtpPurpose.PasswordRecovery;
 
     /// <summary>
     /// Verifica se o propósito da sessão OTP é para alteração de senha.
     /// </summary>
-    /// <returns>Booleano indicando se o propósito é para alteração de senha.</returns>
     public bool IsForPasswordChange() => Purpose == OtpPurpose.PasswordChange;
 }

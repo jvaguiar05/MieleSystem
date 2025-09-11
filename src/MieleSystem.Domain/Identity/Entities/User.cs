@@ -32,6 +32,9 @@ public sealed class User : AggregateRoot, ISoftDeletable
     private readonly List<OtpSession> _otpSessions = new();
     public IReadOnlyCollection<OtpSession> OtpSessions => _otpSessions.AsReadOnly();
 
+    private readonly List<UserConnectionLog> _connectionLogs = new();
+    public IReadOnlyCollection<UserConnectionLog> ConnectionLogs => _connectionLogs.AsReadOnly();
+
     // -----------------------------
     // Soft delete
     // -----------------------------
@@ -41,6 +44,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     // -----------------------------
     // Ctors / factories
     // -----------------------------
+
     // EF
     private User()
         : base(Guid.Empty) { }
@@ -68,6 +72,12 @@ public sealed class User : AggregateRoot, ISoftDeletable
     {
         if (IsDeleted)
             throw new DomainException("Operação não permitida: usuário deletado.");
+    }
+
+    private void EnsureNotSuspended()
+    {
+        if (Role.Equals(UserRole.Suspended))
+            throw new DomainException("Operação não permitida: conta suspensa por segurança.");
     }
 
     private static PasswordHash NewPasswordHashOrThrow(PasswordHash hash) =>
@@ -200,15 +210,154 @@ public sealed class User : AggregateRoot, ISoftDeletable
     {
         EnsureNotDeleted();
 
-        var session = _otpSessions
-            .OrderByDescending(s => s.CreatedAtUtc)
-            .FirstOrDefault(s => s.IsValid(code));
-
-        if (session is null)
-            return false;
+        var session =
+            _otpSessions.OrderByDescending(s => s.CreatedAtUtc).FirstOrDefault(s => s.IsValid(code))
+            ?? throw new DomainException("Código OTP inválido ou expirado.");
 
         session.MarkAsUsed();
         return true;
+    }
+
+    /// <summary>
+    /// Tenta regenerar o código OTP da sessão mais recente ativa para um propósito específico.
+    /// Controla o limite de regenerações por sessão.
+    /// </summary>
+    public bool TryRegenerateOtp(OtpCode newOtpCode, OtpPurpose purpose)
+    {
+        EnsureNotDeleted();
+        EnsureNotSuspended();
+
+        if (newOtpCode == null)
+            throw new DomainException("Código OTP inválido.");
+
+        // Busca a sessão mais recente do propósito especificado que ainda pode ser regenerada
+        var session = _otpSessions
+            .Where(s => s.Purpose == purpose && s.CanRegenerate)
+            .OrderByDescending(s => s.CreatedAtUtc)
+            .FirstOrDefault();
+
+        if (session == null)
+            return false;
+
+        return session.TryRegenerateCode(newOtpCode);
+    }
+
+    /// <summary>
+    /// Verifica se o usuário atingiu o limite de tentativas de OTP e deve ser suspenso.
+    /// Baseado no número de sessões com limite de regeneração excedido.
+    /// </summary>
+    public bool ShouldBeSuspendedForOtpFailures(OtpPurpose purpose, int hours = 1)
+    {
+        var cutoffTime = DateTime.UtcNow.AddHours(-hours);
+
+        var failedSessionsCount = _otpSessions
+            .Where(s => s.Purpose == purpose)
+            .Where(s => s.CreatedAtUtc >= cutoffTime)
+            .Count(s => s.HasExceededRegenerationLimit);
+
+        // 3 sessões que excederam o limite = suspensão
+        return failedSessionsCount >= 3;
+    }
+
+    /// <summary>
+    /// Verifica se o usuário atingiu o limite de tentativas de senha incorreta e deve ser suspenso.
+    /// Baseado no número de falhas de login recentes.
+    /// </summary>
+    /// <param name="hours">Período em horas para análise (padrão: 1 hora).</param>
+    /// <returns>True se deve ser suspenso por excesso de tentativas de senha incorreta.</returns>
+    public bool ShouldBeSuspendedForPasswordFailures(int hours = 1)
+    {
+        var cutoffTime = DateTime.UtcNow.AddHours(-hours);
+
+        var passwordFailuresCount = _connectionLogs
+            .Where(log => log.ConnectedAtUtc >= cutoffTime)
+            .Where(log => !log.IsSuccessful)
+            .Count(log =>
+                log.AdditionalInfo != null && log.AdditionalInfo.Contains("incorrect password")
+            );
+
+        // 5 tentativas de senha incorreta = suspensão
+        return passwordFailuresCount >= 5;
+    }
+
+    // -----------------------------
+    // Ciclo de vida dos logs de conexão (owned by aggregate)
+    // -----------------------------
+    public UserConnectionLog AddConnectionLog(
+        string ipAddress,
+        string userAgent,
+        string? deviceId = null,
+        string? location = null,
+        string? additionalInfo = null
+    )
+    {
+        EnsureNotDeleted();
+
+        var connectionLog = new UserConnectionLog(
+            this,
+            ipAddress,
+            userAgent,
+            deviceId,
+            location,
+            additionalInfo
+        );
+
+        _connectionLogs.Add(connectionLog);
+        return connectionLog;
+    }
+
+    /// <summary>
+    /// Obtém os logs de conexão dos últimos N dias.
+    /// </summary>
+    public IEnumerable<UserConnectionLog> GetRecentConnectionLogs(int days = 30)
+    {
+        var cutoffDate = DateTime.UtcNow.AddDays(-days);
+        return _connectionLogs
+            .Where(log => log.ConnectedAtUtc >= cutoffDate)
+            .OrderByDescending(log => log.ConnectedAtUtc);
+    }
+
+    /// <summary>
+    /// Verifica se o IP é conhecido baseado em conexões anteriores bem-sucedidas.
+    /// </summary>
+    public bool IsKnownIpAddress(string ipAddress, int days = 30)
+    {
+        var recentLogs = GetRecentConnectionLogs(days);
+        return recentLogs.Any(log => log.IpAddress == ipAddress && log.IsSuccessful);
+    }
+
+    /// <summary>
+    /// Verifica se há atividade suspeita baseada nos logs de conexão.
+    /// </summary>
+    public bool HasSuspiciousActivity(string currentIpAddress)
+    {
+        var recentLogs = GetRecentConnectionLogs(1); // Últimas 24 horas
+
+        // Muitas tentativas falhadas
+        var failedAttempts = recentLogs.Count(log => !log.IsSuccessful);
+        if (failedAttempts >= 5)
+            return true;
+
+        // IP desconhecido
+        if (!IsKnownIpAddress(currentIpAddress))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Remove logs de conexão antigos para manter performance.
+    /// </summary>
+    public int CleanupOldConnectionLogs(int keepDays = 90)
+    {
+        EnsureNotDeleted();
+
+        var cutoffDate = DateTime.UtcNow.AddDays(-keepDays);
+        var before = _connectionLogs.Count;
+
+        _connectionLogs.RemoveAll(log => log.ConnectedAtUtc < cutoffDate);
+
+        return before - _connectionLogs.Count;
     }
 
     // -----------------------------
@@ -235,7 +384,7 @@ public sealed class User : AggregateRoot, ISoftDeletable
     }
 
     // -----------------------------
-    // Registration workflow
+    // Registro de usuário (admin approval)
     // -----------------------------
     public void ApproveRegistration()
     {
@@ -261,4 +410,59 @@ public sealed class User : AggregateRoot, ISoftDeletable
         RegistrationSituation = UserRegistrationSituation.Rejected;
         AddDomainEvent(new UserRegistrationRejectedEvent(PublicId, reason.Trim()));
     }
+
+    // -----------------------------
+    // Account suspension (security)
+    // -----------------------------
+
+    /// <summary>
+    /// Suspende a conta mudando o role para Suspended.
+    /// </summary>
+    public void SuspendAccount(string reason)
+    {
+        EnsureNotDeleted();
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Motivo da suspensão é obrigatório.");
+
+        if (Role.Equals(UserRole.Suspended))
+            return; // Já está suspenso
+
+        // Mudar role para Suspended
+        PromoteTo(UserRole.Suspended);
+
+        // Revogar todos os refresh tokens ativos por segurança
+        RevokeAllRefreshTokens();
+
+        // Log da suspensão
+        AddConnectionLog(
+            "System",
+            "SecurityService",
+            additionalInfo: $"Account suspended: {reason.Trim()}"
+        );
+    }
+
+    /// <summary>
+    /// Remove a suspensão restaurando um role padrão.
+    /// </summary>
+    public void RemoveSuspension(UserRole? newRole = null)
+    {
+        EnsureNotDeleted();
+
+        if (!Role.Equals(UserRole.Suspended))
+            return; // Não está suspenso
+
+        // Restaurar para role especificado ou Viewer por padrão
+        var targetRole = newRole ?? UserRole.Viewer;
+        PromoteTo(targetRole);
+
+        // Log da remoção de suspensão
+        AddConnectionLog(
+            "System",
+            "SecurityService",
+            additionalInfo: $"Suspension removed, role restored to: {targetRole.Name}"
+        );
+    }
+
+    public bool IsSuspended => Role.Equals(UserRole.Suspended);
 }

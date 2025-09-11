@@ -26,7 +26,7 @@ public interface IRefreshTokenReadStore
     /// <param name="userId">ID do usuário.</param>
     /// <param name="cancellationToken">Token de cancelamento.</param>
     /// <returns>Lista de RefreshTokenDto ativos.</returns>
-    Task<List<RefreshTokenDto>> GetActiveTokensByUserIdAsync(
+    Task<IEnumerable<RefreshTokenDto>> GetActiveTokensByUserIdAsync(
         int userId,
         CancellationToken cancellationToken = default
     );

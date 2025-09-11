@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using MieleSystem.Application.Identity.Services.Email;
 using EmailObject = MieleSystem.Domain.Identity.ValueObjects.Email;
 
-namespace MieleSystem.Infrastructure.Identity.Email;
+namespace MieleSystem.Infrastructure.Identity.Services.Email;
 
 /// <summary>
 /// Orquestrador responsável pelo envio de e-mails relacionados a operações de conta.

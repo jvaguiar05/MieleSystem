@@ -8,7 +8,7 @@ using MieleSystem.Domain.Identity.Entities;
 using MieleSystem.Domain.Identity.Services;
 using MieleSystem.Infrastructure.Identity.Options;
 
-namespace MieleSystem.Infrastructure.Identity.Services;
+namespace MieleSystem.Infrastructure.Identity.Services.Domain;
 
 /// <summary>
 /// Implementação do serviço de geração de tokens JWT e refresh tokens.
@@ -47,8 +47,10 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
 
     public string GenerateRefreshToken()
     {
-        var randomBytes = RandomNumberGenerator.GetBytes(64);
-        return Convert.ToBase64String(randomBytes);
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
 
     public DateTime GetAccessTokenExpiration() =>
