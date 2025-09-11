@@ -2,7 +2,6 @@ using MediatR;
 using MieleSystem.Application.Common.Extensions;
 using MieleSystem.Application.Common.Responses;
 using MieleSystem.Application.Identity.DTOs;
-using MieleSystem.Application.Identity.Services.Authentication;
 using MieleSystem.Domain.Common.Interfaces;
 using MieleSystem.Domain.Identity.Enums;
 using MieleSystem.Domain.Identity.Repositories;
@@ -18,14 +17,12 @@ public sealed class VerifyLoginOtpHandler(
     IUserRepository users,
     ITokenService tokenService,
     IRefreshTokenHasher refreshTokenHasher,
-    IOtpVerificationService otpVerificationService,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<VerifyLoginOtpCommand, Result<VerifyLoginOtpResult>>
 {
     private readonly IUserRepository _users = users;
     private readonly ITokenService _tokenService = tokenService;
     private readonly IRefreshTokenHasher _refreshTokenHasher = refreshTokenHasher;
-    private readonly IOtpVerificationService _otpVerificationService = otpVerificationService;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<Result<VerifyLoginOtpResult>> Handle(
@@ -59,52 +56,44 @@ public sealed class VerifyLoginOtpHandler(
             );
         }
 
-        var otpVerification = await _otpVerificationService.VerifyOtpAsync(
-            user.Id,
-            request.OtpCode,
-            OtpPurpose.Login,
-            ct
-        );
-
-        if (!otpVerification.IsValid)
+        // Tenta consumir o OTP através do aggregate root (seguindo DDD)
+        try
         {
-            var invalidOtpConnectionLog = user.AddConnectionLog(
+            if (!user.TryConsumeOtp(request.OtpCode))
+            {
+                var consumeFailureLog = user.AddConnectionLog(
+                    request.ClientIp ?? "Unknown",
+                    request.UserAgent ?? "Unknown",
+                    request.DeviceId,
+                    additionalInfo: "Verificação OTP falhou: código inválido ou expirado"
+                );
+                consumeFailureLog.MarkOtpRequired("Verificação OTP falhou");
+
+                _users.Update(user);
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                return Result<VerifyLoginOtpResult>.Failure(
+                    Error.Unauthorized("Código OTP inválido ou expirado.")
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            var exceptionLog = user.AddConnectionLog(
                 request.ClientIp ?? "Unknown",
                 request.UserAgent ?? "Unknown",
                 request.DeviceId,
-                additionalInfo: $"OTP verification failed: {otpVerification.ErrorMessage}"
+                additionalInfo: $"Verificação OTP falhou: {ex.Message}"
             );
-            invalidOtpConnectionLog.MarkOtpRequired("OTP verification attempted");
+            exceptionLog.MarkOtpRequired("Verificação OTP falhou");
 
             _users.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);
 
             return Result<VerifyLoginOtpResult>.Failure(
-                Error.Unauthorized(
-                    otpVerification.ErrorMessage ?? "Código OTP inválido ou expirado."
-                )
+                Error.Unauthorized("Código OTP inválido ou expirado.")
             );
         }
-
-        // Esta parte está quebrada porque o OTP já é consumido na verificação acima.
-        // Deixei comentada para referência futura.
-        // if (!user.TryConsumeOtp(request.OtpCode))
-        // {
-        //     var consumeFailureLog = user.AddConnectionLog(
-        //         request.ClientIp ?? "Unknown",
-        //         request.UserAgent ?? "Unknown",
-        //         request.DeviceId,
-        //         additionalInfo: "OTP verification failed: unable to consume OTP"
-        //     );
-        //     consumeFailureLog.MarkOtpRequired("OTP consumption failed");
-
-        //     _users.Update(user);
-        //     await _unitOfWork.SaveChangesAsync(ct);
-
-        //     return Result<VerifyLoginOtpResult>.Failure(
-        //         Error.Unauthorized("Erro interno na verificação do OTP.")
-        //     );
-        // }
 
         await _unitOfWork.BeginTransactionAsync(ct);
 
@@ -125,10 +114,10 @@ public sealed class VerifyLoginOtpHandler(
                 request.ClientIp ?? "Unknown",
                 request.UserAgent ?? "Unknown",
                 request.DeviceId,
-                additionalInfo: "Login successful with OTP verification"
+                additionalInfo: "Login bem-sucedido com verificação OTP"
             );
             successConnectionLog.MarkAsSuccessful();
-            successConnectionLog.MarkOtpRequired("OTP verification completed successfully");
+            successConnectionLog.MarkOtpRequired("Verificação OTP concluída com sucesso");
 
             _users.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -156,9 +145,11 @@ public sealed class VerifyLoginOtpHandler(
                 request.ClientIp ?? "Unknown",
                 request.UserAgent ?? "Unknown",
                 request.DeviceId,
-                additionalInfo: $"OTP verification failed: infrastructure error - {ex.Message}"
+                additionalInfo: $"Verificação OTP falhou: erro de infraestrutura - {ex.Message}"
             );
-            infrastructureFailureLog.MarkOtpRequired("OTP verification infrastructure error");
+            infrastructureFailureLog.MarkOtpRequired(
+                "Verificação OTP falhou: erro de infraestrutura"
+            );
 
             try
             {

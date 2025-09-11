@@ -21,7 +21,10 @@ public sealed class UserRepository(MieleDbContext db) : RepositoryBase<User>(db)
     /// <returns>Um usuário, se encontrado; caso contrário, null.</returns>
     public async Task<User?> GetByEmailAsync(Mail email, CancellationToken ct = default)
     {
-        return await _set.FirstOrDefaultAsync(x => x.Email == email, ct);
+        return await _set.Include(x => x.OtpSessions)
+            .Include(x => x.RefreshTokens)
+            .Include(x => x.ConnectionLogs)
+            .FirstOrDefaultAsync(x => x.Email == email, ct);
     }
 
     /// <summary>

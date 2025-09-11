@@ -204,12 +204,9 @@ public sealed class User : AggregateRoot, ISoftDeletable
     {
         EnsureNotDeleted();
 
-        var session = _otpSessions
-            .OrderByDescending(s => s.CreatedAtUtc)
-            .FirstOrDefault(s => s.IsValid(code));
-
-        if (session is null)
-            return false;
+        var session =
+            _otpSessions.OrderByDescending(s => s.CreatedAtUtc).FirstOrDefault(s => s.IsValid(code))
+            ?? throw new DomainException("Código OTP inválido ou expirado.");
 
         session.MarkAsUsed();
         return true;

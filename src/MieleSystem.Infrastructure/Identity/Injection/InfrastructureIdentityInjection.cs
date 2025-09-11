@@ -64,9 +64,6 @@ public static class InfrastructureIdentityInjection
 
         services.AddScoped<IOtpService, OtpService>();
 
-        // Serviços de verificação de OTP
-        services.AddScoped<IOtpVerificationService, OtpVerificationService>();
-
         // Serviços de contexto de autenticação
         services.AddScoped<IAuthenticationContextService, AuthenticationContextService>();
         services.AddScoped<IHttpContextAuthenticationService, HttpContextAuthenticationService>();
