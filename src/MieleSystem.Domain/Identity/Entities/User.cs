@@ -74,6 +74,12 @@ public sealed class User : AggregateRoot, ISoftDeletable
             throw new DomainException("Operação não permitida: usuário deletado.");
     }
 
+    private void EnsureNotSuspended()
+    {
+        if (Role.Equals(UserRole.Suspended))
+            throw new DomainException("Operação não permitida: conta suspensa por segurança.");
+    }
+
     private static PasswordHash NewPasswordHashOrThrow(PasswordHash hash) =>
         hash ?? throw new DomainException("Hash de senha inválido.");
 
@@ -212,6 +218,47 @@ public sealed class User : AggregateRoot, ISoftDeletable
         return true;
     }
 
+    /// <summary>
+    /// Tenta regenerar o código OTP da sessão mais recente ativa para um propósito específico.
+    /// Controla o limite de regenerações por sessão.
+    /// </summary>
+    public bool TryRegenerateOtp(OtpCode newOtpCode, OtpPurpose purpose)
+    {
+        EnsureNotDeleted();
+        EnsureNotSuspended();
+
+        if (newOtpCode == null)
+            throw new DomainException("Código OTP inválido.");
+
+        // Busca a sessão mais recente do propósito especificado que ainda pode ser regenerada
+        var session = _otpSessions
+            .Where(s => s.Purpose == purpose && s.CanRegenerate)
+            .OrderByDescending(s => s.CreatedAtUtc)
+            .FirstOrDefault();
+
+        if (session == null)
+            return false;
+
+        return session.TryRegenerateCode(newOtpCode);
+    }
+
+    /// <summary>
+    /// Verifica se o usuário atingiu o limite de tentativas de OTP e deve ser suspenso.
+    /// Baseado no número de sessões com limite de regeneração excedido.
+    /// </summary>
+    public bool ShouldBeSuspendedForOtpFailures(OtpPurpose purpose, int hours = 1)
+    {
+        var cutoffTime = DateTime.UtcNow.AddHours(-hours);
+
+        var failedSessionsCount = _otpSessions
+            .Where(s => s.Purpose == purpose)
+            .Where(s => s.CreatedAtUtc >= cutoffTime)
+            .Count(s => s.HasExceededRegenerationLimit);
+
+        // 3 sessões que excederam o limite = suspensão
+        return failedSessionsCount >= 3;
+    }
+
     // -----------------------------
     // Ciclo de vida dos logs de conexão (owned by aggregate)
     // -----------------------------
@@ -342,4 +389,59 @@ public sealed class User : AggregateRoot, ISoftDeletable
         RegistrationSituation = UserRegistrationSituation.Rejected;
         AddDomainEvent(new UserRegistrationRejectedEvent(PublicId, reason.Trim()));
     }
+
+    // -----------------------------
+    // Account suspension (security)
+    // -----------------------------
+
+    /// <summary>
+    /// Suspende a conta mudando o role para Suspended.
+    /// </summary>
+    public void SuspendAccount(string reason)
+    {
+        EnsureNotDeleted();
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Motivo da suspensão é obrigatório.");
+
+        if (Role.Equals(UserRole.Suspended))
+            return; // Já está suspenso
+
+        // Mudar role para Suspended
+        PromoteTo(UserRole.Suspended);
+
+        // Revogar todos os refresh tokens ativos por segurança
+        RevokeAllRefreshTokens();
+
+        // Log da suspensão
+        AddConnectionLog(
+            "System",
+            "SecurityService",
+            additionalInfo: $"Account suspended: {reason.Trim()}"
+        );
+    }
+
+    /// <summary>
+    /// Remove a suspensão restaurando um role padrão.
+    /// </summary>
+    public void RemoveSuspension(UserRole? newRole = null)
+    {
+        EnsureNotDeleted();
+
+        if (!Role.Equals(UserRole.Suspended))
+            return; // Não está suspenso
+
+        // Restaurar para role especificado ou Viewer por padrão
+        var targetRole = newRole ?? UserRole.Viewer;
+        PromoteTo(targetRole);
+
+        // Log da remoção de suspensão
+        AddConnectionLog(
+            "System",
+            "SecurityService",
+            additionalInfo: $"Suspension removed, role restored to: {targetRole.Name}"
+        );
+    }
+
+    public bool IsSuspended => Role.Equals(UserRole.Suspended);
 }

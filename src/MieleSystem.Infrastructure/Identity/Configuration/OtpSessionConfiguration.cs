@@ -25,6 +25,10 @@ public sealed class OtpSessionConfiguration : IEntityTypeConfiguration<OtpSessio
 
         builder.Property(x => x.UsedAtUtc).HasColumnType("timestamp without time zone");
 
+        builder.Property(x => x.RegenerationAttempts).IsRequired();
+
+        builder.Property(x => x.LastRegeneratedAtUtc).HasColumnType("timestamp without time zone");
+
         // ---------------------------
         // Value Object: OtpCode
         // ---------------------------
