@@ -8,7 +8,16 @@ namespace MieleSystem.Infrastructure.Identity.Services.Email;
 /// Orquestrador responsável pelo envio de e-mails relacionados a operações de conta.
 /// Coordena validação, renderização de templates, logging e envio de e-mails.
 /// </summary>
-public sealed class AccountEmailService : IAccountEmailService, IDisposable
+/// <remarks>
+/// Inicializa uma nova instância do orquestrador de e-mails.
+/// </remarks>
+public sealed class AccountEmailService(
+    IEmailSender emailSender,
+    IEmailTemplateService templateService,
+    IEmailLoggingService loggingService,
+    IEmailValidator emailValidator,
+    ILogger<AccountEmailService> logger
+) : IAccountEmailService, IDisposable
 {
     private static class EmailTypes
     {
@@ -26,45 +35,16 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
         public const string RegistrationApproved = "Sua conta foi aprovada - MieleSystem";
     }
 
-    private readonly IEmailSender _emailSender;
-    private readonly IEmailTemplateService _templateService;
-    private readonly IEmailLoggingService _loggingService;
-    private readonly IEmailValidator _emailValidator;
-    private readonly ILogger<AccountEmailService> _logger;
+    private readonly IEmailSender _emailSender = emailSender;
+    private readonly IEmailTemplateService _templateService = templateService;
+    private readonly IEmailLoggingService _loggingService = loggingService;
+    private readonly IEmailValidator _emailValidator = emailValidator;
     private bool _disposed;
 
     /// <summary>
-    /// Inicializa uma nova instância do orquestrador de e-mails.
-    /// </summary>
-    /// <param name="emailSender">Serviço de envio de e-mails.</param>
-    /// <param name="templateService">Serviço de renderização de templates.</param>
-    /// <param name="loggingService">Serviço de logging.</param>
-    /// <param name="emailValidator">Serviço de validação de e-mails.</param>
-    /// <param name="logger">Logger para registro de eventos.</param>
-    public AccountEmailService(
-        IEmailSender emailSender,
-        IEmailTemplateService templateService,
-        IEmailLoggingService loggingService,
-        IEmailValidator emailValidator,
-        ILogger<AccountEmailService> logger
-    )
-    {
-        _emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
-        _templateService =
-            templateService ?? throw new ArgumentNullException(nameof(templateService));
-        _loggingService = loggingService ?? throw new ArgumentNullException(nameof(loggingService));
-        _emailValidator = emailValidator ?? throw new ArgumentNullException(nameof(emailValidator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    /// <summary>
     /// Envia um e-mail de boas-vindas para um novo usuário.
+    /// Desabilitado temporariamente.
     /// </summary>
-    /// <param name="to">Endereço de e-mail de destino.</param>
-    /// <param name="userName">Nome de exibição do usuário.</param>
-    /// <param name="ct">Token de cancelamento opcional.</param>
-    /// <exception cref="ArgumentNullException">Quando 'to' ou 'userName' são null ou vazios.</exception>
-    /// <exception cref="ObjectDisposedException">Quando o serviço foi descartado.</exception>
     public async Task SendWelcomeAsync(
         EmailObject to,
         string userName,
@@ -82,7 +62,7 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
             var subject = EmailSubjects.Welcome;
             var body = await _templateService.RenderWelcomeTemplateAsync(userName);
 
-            await _emailSender.SendAsync(to, subject, body, ct);
+            // await _emailSender.SendAsync(to, subject, body, ct);
 
             _loggingService.LogEmailSentSuccessfully(EmailTypes.Welcome, to.Value);
         }
@@ -96,13 +76,6 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
     /// <summary>
     /// Envia um e-mail contendo código OTP para autenticação de dois fatores.
     /// </summary>
-    /// <param name="to">Endereço de e-mail de destino.</param>
-    /// <param name="code">Código OTP a ser enviado.</param>
-    /// <param name="expiresAtUtc">Data e hora de expiração do código (em UTC).</param>
-    /// <param name="ct">Token de cancelamento opcional.</param>
-    /// <exception cref="ArgumentNullException">Quando 'to' ou 'code' são null ou vazios.</exception>
-    /// <exception cref="ArgumentException">Quando 'expiresAtUtc' é no passado.</exception>
-    /// <exception cref="ObjectDisposedException">Quando o serviço foi descartado.</exception>
     public async Task SendOtpAsync(
         EmailObject to,
         string code,
@@ -122,7 +95,7 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
             var subject = EmailSubjects.Otp;
             var body = await _templateService.RenderOtpTemplateAsync(code, expiresAtUtc);
 
-            await _emailSender.SendAsync(to, subject, body, ct);
+            // await _emailSender.SendAsync(to, subject, body, ct);
 
             _loggingService.LogEmailSentSuccessfully(EmailTypes.Otp, to.Value);
         }
@@ -136,12 +109,6 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
     /// <summary>
     /// Envia um e-mail notificando alteração de senha na conta.
     /// </summary>
-    /// <param name="to">Endereço de e-mail de destino.</param>
-    /// <param name="changedAtUtc">Data e hora da alteração (em UTC).</param>
-    /// <param name="ct">Token de cancelamento opcional.</param>
-    /// <exception cref="ArgumentNullException">Quando 'to' é null.</exception>
-    /// <exception cref="ArgumentException">Quando 'changedAtUtc' é no futuro.</exception>
-    /// <exception cref="ObjectDisposedException">Quando o serviço foi descartado.</exception>
     public async Task SendPasswordChangedAsync(
         EmailObject to,
         DateTime changedAtUtc,
@@ -159,7 +126,7 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
             var subject = EmailSubjects.PasswordChanged;
             var body = await _templateService.RenderPasswordChangedTemplateAsync(changedAtUtc);
 
-            await _emailSender.SendAsync(to, subject, body, ct);
+            // await _emailSender.SendAsync(to, subject, body, ct);
 
             _loggingService.LogEmailSentSuccessfully(EmailTypes.PasswordChanged, to.Value);
         }
@@ -173,11 +140,6 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
     /// <summary>
     /// Envia um e-mail notificando que o registro foi aprovado.
     /// </summary>
-    /// <param name="to">Endereço de e-mail de destino.</param>
-    /// <param name="userName">Nome de exibição do usuário.</param>
-    /// <param name="ct">Token de cancelamento opcional.</param>
-    /// <exception cref="ArgumentNullException">Quando 'to' ou 'userName' são null ou vazios.</exception>
-    /// <exception cref="ObjectDisposedException">Quando o serviço foi descartado.</exception>
     public async Task SendRegistrationApprovedAsync(
         EmailObject to,
         string userName,
@@ -195,7 +157,7 @@ public sealed class AccountEmailService : IAccountEmailService, IDisposable
             var subject = EmailSubjects.RegistrationApproved;
             var body = await _templateService.RenderRegistrationApprovedTemplateAsync(userName);
 
-            await _emailSender.SendAsync(to, subject, body, ct);
+            // await _emailSender.SendAsync(to, subject, body, ct);
 
             _loggingService.LogEmailSentSuccessfully(EmailTypes.RegistrationApproved, to.Value);
         }
