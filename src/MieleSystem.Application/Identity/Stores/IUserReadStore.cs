@@ -19,4 +19,12 @@ public interface IUserReadStore
         PageRequestDto request,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Obtém um usuário pelo seu ID público.
+    /// </summary>
+    /// <param name="publicId">ID público do usuário</param>
+    /// <param name="ct">Token de cancelamento</param>
+    /// <returns>Dados detalhados do usuário ou null se não encontrado</returns>
+    Task<UserDto?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default);
 }

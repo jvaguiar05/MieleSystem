@@ -38,4 +38,13 @@ public sealed class UserReadStore(MieleDbContext db, IMapper mapper) : IUserRead
             totalCount: total
         );
     }
+
+    public async Task<UserDto?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default)
+    {
+        return await _db
+            .Users.AsNoTracking()
+            .Where(u => u.PublicId == publicId && !u.IsDeleted)
+            .ProjectTo<UserDto>(_mapper.ConfigurationProvider)
+            .FirstOrDefaultAsync(ct);
+    }
 }

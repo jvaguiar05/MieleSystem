@@ -14,6 +14,17 @@ public sealed class IdentityMappingProfile : Profile
             .ForMember(d => d.Email, cfg => cfg.MapFrom(s => s.Email.Value))
             .ForMember(d => d.Role, cfg => cfg.MapFrom(s => s.Role.ToString()));
 
+        CreateMap<User, UserDto>()
+            .ForMember(d => d.PublicId, cfg => cfg.MapFrom(s => s.PublicId))
+            .ForMember(d => d.Name, cfg => cfg.MapFrom(s => s.Name))
+            .ForMember(d => d.Email, cfg => cfg.MapFrom(s => s.Email.Value))
+            .ForMember(d => d.Role, cfg => cfg.MapFrom(s => s.Role.ToString()))
+            .ForMember(d => d.RegistrationSituation, cfg => cfg.MapFrom(s => s.RegistrationSituation.ToString()))
+            .ForMember(d => d.CreatedAtUtc, cfg => cfg.MapFrom(s => s.CreatedAtUtc))
+            .ForMember(d => d.ExpiresAt, cfg => cfg.MapFrom(s => s.ExpiresAt))
+            .ForMember(d => d.IsDeleted, cfg => cfg.MapFrom(s => s.IsDeleted))
+            .ForMember(d => d.DeletedAt, cfg => cfg.MapFrom(s => s.DeletedAt));
+
         CreateMap<RefreshToken, RefreshTokenDto>()
             .ForMember(d => d.UserId, cfg => cfg.Ignore())
             .ForMember(d => d.TokenHash, cfg => cfg.MapFrom(s => s.TokenHash.Value));
